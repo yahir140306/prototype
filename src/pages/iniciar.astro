@@ -1,0 +1,34 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+  <br />
+  <section class="m-auto bg-gray-100/80 border-2 rounded-lg">
+    <article class="p-4">
+      <h1 class="text-3xl font-bold text-center mb-4">Iniciar Sesión</h1>
+      <form class="flex flex-col items-center">
+        <label for="email" class="text-lg mb-2">Correo Electrónico:</label>
+        <input
+          type="email"
+          id="email"
+          class="border border-gray-400 p-2 rounded w-3/4 mb-4"
+          required
+        />
+        <label for="password" class="text-lg mb-2">Contraseña:</label>
+        <input
+          type="password"
+          id="password"
+          class="border border-gray-400 p-2 rounded w-3/4 mb-4"
+          required
+        />
+        <button
+          type="submit"
+          class="bg-blue-600 text-white p-2 rounded hover:bg-blue-500 transition w-3/4"
+        >
+          Iniciar Sesión
+        </button>
+      </form>
+    </article>
+  </section>
+</Layout>
