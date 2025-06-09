@@ -1,32 +1,66 @@
 ---
 import { CUARTO } from "./cuarto";
-
 // name , description, image, price
+
+// using supabase 👇
+import { supabase } from "../lib/supabaseClient";
+const { data: cuartoData, error } = await supabase.from("cuartos").select("*");
+
+console.log(cuartoData);
 ---
 
-<!-- <div class="m-2"> -->{
-  CUARTO.map((cuarto) => (
-    <div class="m-2">
-      <section class="border border-black rounded-lg p-4 m-auto w-3/4 bg-gray-200/80 md:flex justify-around items-center gap-4 md:w-1/2">
-        <article>
-          <img
-            src={cuarto.image}
-            alt="imagen del cuarto"
-            class="rounded-md shadow-lg w-full h-64 object-cover"
-          />
-        </article>
-        <article>
-          <h2>{cuarto.name}</h2>
-          <p>{cuarto.description}</p>
-          <p>
-            Precio: <strong>${cuarto.price}</strong> al mes
-          </p>
-          <button class="bg-blue-600 text-white p-2 m-2 rounded-md hover:bg-blue-500 transition">
-            <a href="/cuartoInformacion">Informacion</a>
-          </button>
-        </article>
-      </section>
-    </div>
-  ))
-}
-<!-- </div> -->
+<div class="m-2">
+  {
+    CUARTO.map((cuarto) => (
+      <div class="m-2">
+        <section class="border border-black rounded-lg p-4 m-auto w-3/4 bg-gray-200/80 md:flex justify-around items-center gap-4 md:w-1/2">
+          <article>
+            <img
+              src={cuarto.image}
+              alt="imagen del cuarto"
+              class="rounded-md shadow-lg w-full h-64 object-cover"
+            />
+          </article>
+          <article>
+            <h2>{cuarto.name}</h2>
+            <p>{cuarto.description}</p>
+            <p>
+              Precio: <strong>${cuarto.price}</strong> al mes
+            </p>
+            <button class="bg-blue-600 text-white p-2 m-2 rounded-md hover:bg-blue-500 transition">
+              <a href="/cuartoInformacion">Informacion</a>
+            </button>
+          </article>
+        </section>
+      </div>
+    ))
+  }
+</div>
+
+<div class="m-2">
+  {error && <p>Error al cargar los cuartos: {error.message}</p>}
+  {
+    cuartoData &&
+      cuartoData.map((cuartos) => (
+        <section class="border border-black rounded-lg p-4 m-auto w-3/4 bg-gray-200/80 md:flex justify-around items-center gap-4 md:w-1/2">
+          <article>
+            <img
+              src={cuartos.imagen_1}
+              alt="imagen del cuarto"
+              class="rounded-md shadow-lg w-full h-64 object-cover"
+            />
+          </article>
+          <article>
+            <h2>{cuartos.name}</h2>
+            <p>{cuartos.descripcion}</p>
+            <p>
+              Precio: <strong>${cuartos.precio}</strong> al mes
+            </p>
+            <button class="bg-blue-600 text-white p-2 m-2 rounded-md hover:bg-blue-500 transition">
+              <a href="/cuartoInformacion">Informacion</a>
+            </button>
+          </article>
+        </section>
+      ))
+  }
+</div>
