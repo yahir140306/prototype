@@ -1,12 +1,39 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { supabase } from "../lib/supabaseClient";
+
+let mensaje = "";
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const role = formData.get("role");
+
+  // const { data, error } = await supabase.auth.signUp({
+  //   email,
+  //   password,
+  //   options: {
+  //     data: {
+  //       role, // Guardamos el rol del usuario
+  //     },
+  //   },
+  // });
+
+  //   if (error) {
+  //     mensaje = `Error al registrarse: ${error.message}`;
+  //   } else {
+  //     mensaje = "Registro exitoso. Por favor, verifica tu correo electrónico.";
+  //     return Astro.redirect("/login");
+  //   }
+}
 ---
 
 <Layout>
   <div class="flex items-center justify-center min-h-screen">
     <div class="bg-gray-100 p-8 rounded shadow-md w-full max-w-md">
       <h2 class="text-2xl font-semibold text-center mb-6">Registrarte</h2>
-      <form method="POST" action="/api/login">
+      <form method="POST">
         <div class="mb-4">
           <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
             Correo electrónico
@@ -16,6 +43,7 @@ import Layout from "../layouts/Layout.astro";
             id="email"
             name="email"
             required
+            placeholder="Correo electrónico"
             class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
@@ -31,6 +59,7 @@ import Layout from "../layouts/Layout.astro";
             id="password"
             name="password"
             required
+            placeholder="Contraseña"
             class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
