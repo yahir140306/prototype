@@ -1,16 +1,20 @@
 ---
+// Importamos Supabase en el server antes de que el HTML se envíe
 import Layout from "../layouts/Layout.astro";
 import { createClient } from "../lib/supabase";
 import "../styles/global.css";
 
+// Creamos el cliente Supabase en el server-side
 const supabase = createClient({
   request: Astro.request,
   cookies: Astro.cookies,
 });
 
+// Obtenemos al usuario autenticado antes de que el HTML aparezca
 const { data } = await supabase.auth.getUser();
 
 if (data?.user) {
+  // Si el usuário ya tiene sesión, lo redirigimos directamente
   return Astro.redirect("/protected");
 }
 ---
@@ -34,8 +38,9 @@ if (data?.user) {
         type="submit"
         id="sign-in"
         class="bg-gray-600 hover:bg-gray-700 p-2 rounded-md text-white font-bold w-full cursor-pointer disabled:bg-gray-500 disabled:hover:bg-gray-500 disabled:cursor-not-allowed"
-        >Iniciar sesión</button
       >
+        Iniciar sesión
+      </button>
     </form>
   </section>
 </Layout>
@@ -62,7 +67,6 @@ if (data?.user) {
           "Ups! No se pudo iniciar sesión. Por favor intenta de nuevo."
         );
       }
-
       formSubmitBtn.textContent = "Iniciar sesión";
       return alert(
         "Revisa tu correo electrónico para completar el inicio de sesión."
