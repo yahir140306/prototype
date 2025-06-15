@@ -1,102 +1,72 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { createClient } from "../lib/supabase";
+import "../styles/global.css";
+
+const supabase = createClient({
+	request: Astro.request,
+	cookies: Astro.cookies,
+});
+
+const { data } = await supabase.auth.getUser();
+
+if (data.user) {
+	return Astro.redirect("/protected");
+}
 ---
 
 <Layout>
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="bg-gray-100 p-8 rounded shadow-md w-full max-w-md">
-      <h2 class="text-2xl font-semibold text-center mb-6">Registrarte</h2>
-      <form action="/api/registro" method="POST">
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-            Nombre completo
-          </label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            required
-            placeholder="Nombre completo"
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-            Apellido Paterno
-          </label>
-          <input
-            type="text"
-            id="apellido_paterno"
-            name="apellido_paterno"
-            required
-            placeholder="Apellido Paterno"
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-            Apellido Materno
-          </label>
-          <input
-            type="text"
-            id="apellido_materno"
-            name="apellido_materno"
-            required
-            placeholder="Apellido Materno"
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-            Correo electrónico
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            required
-            placeholder="Correo electrónico"
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div class="mb-4">
-          <label
-            class="block text-gray-700 text-sm font-bold mb-2"
-            for="password"
-          >
-            Contraseña
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            required
-            placeholder="Contraseña"
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="role">
-            ¿Qué vas a hacer?
-          </label>
-          <select
-            id="role"
-            name="role"
-            required
-            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="">Selecciona una opción</option>
-            <option value="rentar">Voy a rentar un cuarto</option>
-            <option value="dueno"> Soy el dueño que ofrece cuartos </option>
-          </select>
-        </div>
-        <button
-          type="submit"
-          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Registrarte
-        </button>
-      </form>
-    </div>
-  </div>
+	<section class="flex flex-col items-center justify-center m-30">
+		<h1 class="text-4xl text-left font-bold mb-12">Sign In to Your Account</h1>
+		<form id="signin-form" class="flex flex-col gap-2 w-1/2">
+			<label for="email" class="">Enter your email</label>
+			<input
+				type="email"
+				name="email"
+				id="email"
+				placeholder="youremail@example.com"
+				class="border border-gray-500 rounded-md p-2"
+				required
+			/>
+			<button
+				type="submit"
+				id="sign-in"
+				class="bg-gray-600 hover:bg-gray-700 p-2 rounded-md text-white font-bold w-full cursor-pointer disabled:bg-gray-500 disabled:hover:bg-gray-500 disabled:cursor-not-allowed"
+				>Sign In</button
+			>
+		</form>
+	</section>
 </Layout>
+
+<script>
+	import { actions } from "astro:actions";
+
+	const signInForm = document.querySelector("#signin-form") as HTMLFormElement;
+	const formSubmitBtn = document.getElementById("sign-in") as HTMLButtonElement;
+
+	signInForm?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		formSubmitBtn!.disabled = true;
+		formSubmitBtn!.textContent = "Signing in...";
+
+		try {
+			const formData = new FormData(signInForm);
+
+			const results = await actions.signIn(formData);
+
+			if (!results.data?.success) {
+				formSubmitBtn.disabled = false;
+				formSubmitBtn.textContent = "Sign In";
+				return alert("Oops! Could not sign in. Please try again");
+			}
+
+			formSubmitBtn.textContent = "Sign In";
+			return alert("Please check your email to sign in");
+		} catch (error) {
+			formSubmitBtn.disabled = false;
+			formSubmitBtn.textContent = "Sign In";
+			console.log(error);
+			return alert("Something went wrong. Please try again");
+		}
+	});
+</script>
