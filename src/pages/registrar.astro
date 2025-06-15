@@ -10,21 +10,23 @@ const supabase = createClient({
 
 const { data } = await supabase.auth.getUser();
 
-if (data.user) {
+if (data?.user) {
   return Astro.redirect("/protected");
 }
 ---
 
 <Layout>
   <section class="flex items-center justify-center min-h-screen">
-    <h1 class="text-4xl text-left font-bold mb-12">Sign In to Your Account</h1>
+    <h1 class="text-4xl text-left font-bold mb-12">
+      Inicia sesión en tu cuenta
+    </h1>
     <form id="signin-form" class="flex flex-col gap-2 w-1/2">
-      <label for="email" class="">Enter your email</label>
+      <label for="email" class="">Ingresa tu correo electrónico</label>
       <input
         type="email"
         name="email"
         id="email"
-        placeholder="youremail@example.com"
+        placeholder="tucorreo@example.com"
         class="border border-gray-500 rounded-md p-2"
         required
       />
@@ -32,7 +34,7 @@ if (data.user) {
         type="submit"
         id="sign-in"
         class="bg-gray-600 hover:bg-gray-700 p-2 rounded-md text-white font-bold w-full cursor-pointer disabled:bg-gray-500 disabled:hover:bg-gray-500 disabled:cursor-not-allowed"
-        >Sign In</button
+        >Iniciar sesión</button
       >
     </form>
   </section>
@@ -47,26 +49,29 @@ if (data.user) {
   signInForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     formSubmitBtn!.disabled = true;
-    formSubmitBtn!.textContent = "Signing in...";
+    formSubmitBtn!.textContent = "Iniciando sesión...";
 
     try {
       const formData = new FormData(signInForm);
-
       const results = await actions.signIn(formData);
 
       if (!results.data?.success) {
         formSubmitBtn.disabled = false;
-        formSubmitBtn.textContent = "Sign In";
-        return alert("Oops! Could not sign in. Please try again");
+        formSubmitBtn.textContent = "Iniciar sesión";
+        return alert(
+          "Ups! No se pudo iniciar sesión. Por favor intenta de nuevo."
+        );
       }
 
-      formSubmitBtn.textContent = "Sign In";
-      return alert("Please check your email to sign in");
+      formSubmitBtn.textContent = "Iniciar sesión";
+      return alert(
+        "Revisa tu correo electrónico para completar el inicio de sesión."
+      );
     } catch (error) {
       formSubmitBtn.disabled = false;
-      formSubmitBtn.textContent = "Sign In";
+      formSubmitBtn.textContent = "Iniciar sesión";
       console.log(error);
-      return alert("Something went wrong. Please try again");
+      return alert("Algo salió mal. Por favor intenta de nuevo.");
     }
   });
 </script>
