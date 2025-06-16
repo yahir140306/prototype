@@ -14,7 +14,7 @@ const { data } = await supabase.auth.getUser();
 <Layout>
   <section class="flex flex-col items-center justify-center m-30">
     <h1 class="text-4xl text-left font-bold mb-12">Has iniciado sesión</h1>
-    <p class="mb-6">Tu ID de usuario: {data?.user?.id}</p>
+    <p class="mb-6">Tu ID de usuario: {data.user?.id}</p>
     <button
       id="sign-out"
       class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-md text-white font-bold cursor-pointer disabled:bg-gray-500 disabled:hover:bg-gray-500 disabled:cursor-not-allowed"

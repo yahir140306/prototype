@@ -13,7 +13,7 @@ const supabase = createClient({
 // Obtenemos al usuario autenticado antes de que el HTML aparezca
 const { data } = await supabase.auth.getUser();
 
-if (data?.user) {
+if (data.user) {
   // Si el usuário ya tiene sesión, lo redirigimos directamente
   return Astro.redirect("/protected");
 }
