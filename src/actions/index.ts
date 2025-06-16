@@ -22,7 +22,7 @@ const emailSignUp = async (
 		const { data, error } = await supabase.auth.signInWithOtp({
 			email,
 			options: {
-				emailRedirectTo: "https://project-liard-alpha-81.vercel.app//api/exchange",
+				emailRedirectTo: "https://project-liard-alpha-81.vercel.app/api/exchange",
 			},
 		});
 
