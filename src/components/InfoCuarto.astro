@@ -4,24 +4,109 @@ import { CUARTO } from "./cuarto";
 
 <section>
   <article>
-    <img
+    <!-- <img
       src="/Images/cuarto1.jpeg"
       alt="Imagen del cuarto"
       class="w-1/2 m-auto"
-    />
-  </article>
-  <article>
-    <h2 class="text-2xl font-bold text-center mt-4">Cuarto Estándar</h2>
-    <p class="text-lg text-gray-700 text-center mt-2">
-      Este cuarto cuenta con todas las comodidades necesarias para una estancia
-      agradable. Equipado con cama matrimonial, escritorio, y baño privado.
-    </p>
-    <p class="text-lg text-gray-700 text-center mt-2">
-      Precio: <strong>800</strong> al mes
-    </p>
-    <button
-      class="bg-blue-600 text-white p-2 m-2 rounded-md hover:bg-blue-500 transition"
-      ><a href="/">Regresar</a></button
+    /> -->
+    <div
+      class="carousel carousel--scroll-buttons carousel--scroll-markers flex"
     >
+      <div class="carousel__slide" data-label="Slide 1">
+        <img
+          src="/Images/cuartos/cuarto1_1.jpg"
+          alt=""
+          class="carousel__slide"
+          data-label="Slide 1"
+        />
+      </div>
+      <div class="carousel__slide" data-label="Slide 2">
+        <img
+          src="/Images/cuartos/cuarto1_2.jpg"
+          alt=""
+          class="carousel__slide"
+          data-label="Slide 2"
+        />
+      </div>
+      <div class="carousel__slide" data-label="Slide 3">
+        <img
+          src="/Images/cuartos/cuarto1_3.jpg"
+          alt=""
+          class="carousel__slide"
+          data-label="Slide 3"
+        />
+      </div>
+      <div></div>
+    </div>
+    <article>
+      <h2 class="text-2xl font-bold text-center mt-4">Cuarto Estándar</h2>
+      <p class="text-lg text-gray-700 text-center mt-2">
+        Este cuarto cuenta con todas las comodidades necesarias para una
+        estancia agradable. Equipado con cama matrimonial, escritorio, y baño
+        privado.
+      </p>
+      <p class="text-lg text-gray-700 text-center mt-2">
+        Precio: <strong>800</strong> al mes
+      </p>
+      <button
+        class="bg-blue-600 text-white p-2 m-2 rounded-md hover:bg-blue-500 transition"
+        ><a href="/">Regresar</a></button
+      >
+    </article>
   </article>
 </section>
+
+<style>
+  .carousel {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    anchor-name: --carousel;
+
+    > .carousel__slide {
+      scroll-snap-align: center;
+    }
+  }
+  .carousel--scroll-buttons {
+    &::scroll-button(*) {
+      position: fixed;
+      position-anchor: --carousel;
+      font-family: "Material Symbols Outlined";
+    }
+
+    &::scroll-button(right) {
+      position-area: inline-end center;
+      content: "arrow_forward" / "Next";
+    }
+
+    &::scroll-button(left) {
+      position-area: inline-start center;
+      content: "arrow_back" / "Previous";
+    }
+  }
+  .carousel--scroll-markers {
+    scroll-marker-group: after;
+
+    &::scroll-marker-group {
+      position: fixed;
+      position-anchor: --carousel;
+      position-area: block-end;
+      margin: 10px;
+
+      display: grid;
+      grid-auto-columns: 20px;
+      grid-auto-flow: column;
+      gap: 20px;
+    }
+
+    > .carousel__slide {
+      &::scroll-marker {
+        content: "" / attr(data-label);
+      }
+
+      &::scroll-marker:target-current {
+        background: var(--accent);
+      }
+    }
+  }
+</style>
