@@ -23,6 +23,7 @@ const emailSignUp = async (
 			email,
 			options: {
 				emailRedirectTo: "https://project-liard-alpha-81.vercel.app/api/exchange",
+				// emailRedirectTo: "http://localhost:4321/api/exchange",
 			},
 		});
 
