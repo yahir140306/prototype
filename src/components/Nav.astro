@@ -1,21 +1,76 @@
-<section class="flex justify-around items-center p-4 bg-gray-300">
-  <article class="mx-2">
-    <img src="/favicon.svg" alt="logo" class="w-10 h-10" />
-  </article>
-  <article class="mx-2">
-    <h1 class="text-2xl font-bold">R 4 N T U</h1>
-  </article>
-  <article class="flex mx-2 space-x-4">
-    <ul class="flex space-x-4">
-      <li class="list-none cursor-pointer hover:text-white transition">
-        <a href="/">Home</a>
-      </li>
-      <li class="list-none cursor-pointer hover:text-white transition">
-        <a href="/iniciar">Iniciar</a>
-      </li>
-      <li class="list-none cursor-pointer hover:text-white transition">
-        <a href="/registrar">Registrar</a>
-      </li>
-    </ul>
-  </article>
+<section class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex items-center space-x-3">
+        <img src="/favicon.svg" alt="logo" class="w-8 h-8" />
+        <h1 class="text-xl font-semibold text-gray-800">R A N T U</h1>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex items-center space-x-6">
+        <a href="/" class="text-gray-700 hover:text-blue-600 transition-colors"
+          >Home</a
+        >
+        <a
+          href="/registrar"
+          class="text-gray-700 hover:text-blue-600 transition-colors">Entrar</a
+        >
+        <a
+          href="/agregar-cuarto"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Agregar Cuarto
+        </a>
+      </nav>
+
+      <!-- Mobile Menu Button -->
+      <button
+        id="mobile-btn"
+        class="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div
+      id="mobile-menu"
+      class="md:hidden hidden py-4 border-t border-gray-200"
+    >
+      <div class="flex flex-col space-y-3">
+        <a href="/" class="text-gray-700 hover:text-blue-600 transition-colors"
+          >Home</a
+        >
+        <a
+          href="/registrar"
+          class="text-gray-700 hover:text-blue-600 transition-colors">Entrar</a
+        >
+        <a
+          href="/agregar-cuarto"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block text-center"
+        >
+          Agregar Cuarto
+        </a>
+      </div>
+    </div>
+  </div>
 </section>
+
+<script>
+  document.getElementById("mobile-btn").addEventListener("click", function () {
+    const menu = document.getElementById("mobile-menu");
+    menu.classList.toggle("hidden");
+  });
+</script>
