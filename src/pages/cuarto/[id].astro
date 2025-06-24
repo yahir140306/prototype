@@ -1,116 +1,156 @@
 ---
-// src/pages/cuarto/[id].astro
 import { createClient } from "../../lib/supabase";
 
-// Obtener el ID del cuarto desde los parámetros
+// Obtener el ID del cuarto desde los parámetros de la URL
 const { id } = Astro.params;
 
-// Crear cliente de Supabase correctamente
+// Crear cliente de Supabase
 const supabase = createClient({
   request: Astro.request,
   cookies: Astro.cookies,
 });
 
-// Obtener datos del cuarto específico
+// Obtener los datos del cuarto específico
 const { data: cuarto, error } = await supabase
-  .from("cuartos")
-  .select("*")
-  .eq("id", id)
+  .from('cuartos')
+  .select('*')
+  .eq('id', id)
   .single();
 
-if (error) {
-  console.error("Error obteniendo cuarto:", error);
+// Si no se encuentra el cuarto, redirigir o mostrar error
+if (error || !cuarto) {
+  console.error('Error obteniendo cuarto:', error);
+  return Astro.redirect('/404');
 }
----
 
-<!-- ---
-// src/pages/cuarto/[id].astro
-import { createClient } from "../../lib/supabase";
-
-// Obtener el ID del cuarto desde los parámetros
-const { id } = Astro.params;
-
-// Crear cliente de Supabase correctamente
-const supabase = createClient({
-  request: Astro.request,
-  cookies: Astro.cookies,
-});
-
-// Obtener datos del cuarto específico
-const { data: cuarto, error } = await supabase
-  .from("cuartos")
-  .select("*")
-  .eq("id", id)
-  .single();
-
-if (error) {
-  console.error("Error obteniendo cuarto:", error);
+// Preparar las imágenes (por ahora solo imagen_1, pero puedes expandir)
+const imagenes = [];
+if (cuarto.imagen_1) {
+  imagenes.push({
+    url: cuarto.imagen_1,
+    alt: `Vista principal de ${cuarto.name}`
+  });
 }
+
+// Si no hay imágenes, usar una imagen por defecto
+if (imagenes.length === 0) {
+  imagenes.push({
+    url: '/Images/default.jpeg',
+    alt: 'Imagen no disponible'
+  });
+}
+
+// DEBUG: Agregar estos logs
+console.log('=== DEBUG CUARTO ===')
+console.log('ID del cuarto:', id)
+console.log('Cuarto completo:', JSON.stringify(cuarto, null, 2))
+console.log('cuarto.imagen_1:', cuarto.imagen_1)
+console.log('Tipo de imagen_1:', typeof cuarto.imagen_1)
+console.log('===================')
 ---
 
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{cuarto ? cuarto.name : "Cuarto no encontrado"}</title>
-  </head>
-  <body>
-    <div class="max-w-4xl mx-auto p-4">
-      {
-        cuarto ? (
-          <div>
-            <h1 class="text-3xl font-bold mb-4">{cuarto.name}</h1>
-            {cuarto.imagen_1 && (
-              <img
-                src={cuarto.imagen_1}
-                alt={cuarto.name}
-                class="w-full max-w-md h-64 object-cover rounded-lg mb-4"
-              />
-            )}
-            <p class="text-gray-600 mb-4">{cuarto.descripcion}</p>
-            <p class="text-2xl font-bold">${cuarto.precio}/mes</p>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{cuarto.name} - Detalles del Cuarto</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <section class="max-w-4xl mx-auto px-4 py-8">
+    <article class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div class="relative">
+        <div id="carousel" class="overflow-hidden rounded-t-xl">
+          <div
+            id="carousel-track" 
+            class="flex transition-transform duration-500 ease-in-out"
+          >
+            {imagenes.map((imagen, index) => (
+              <div class="carousel-slide flex-shrink-0 w-full">
+                <img
+                  src={imagen.url}
+                  alt={imagen.alt}
+                  class="w-full h-80 object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+              </div>
+            ))}
           </div>
-        ) : (
-          <div>
-            <h1 class="text-3xl font-bold mb-4">Cuarto no encontrado</h1>
-            <p>El cuarto que buscas no existe.</p>
-          </div>
-        )
-      }
-    </div>
-  </body>
-</html> -->
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{cuarto ? cuarto.name : "Cuarto no encontrado"}</title>
-  </head>
-  <body>
-    <div class="max-w-4xl mx-auto p-4">
-      {
-        cuarto ? (
-          <div>
-            <h1 class="text-3xl font-bold mb-4">{cuarto.name}</h1>
-            {cuarto.imagen_1 && (
-              <img
-                src={cuarto.imagen_1}
-                alt={cuarto.name}
-                class="w-full max-w-md h-64 object-cover rounded-lg mb-4"
-              />
-            )}
-            <p class="text-gray-600 mb-4">{cuarto.descripcion}</p>
-            <p class="text-2xl font-bold">${cuarto.precio}/mes</p>
-          </div>
-        ) : (
-          <div>
-            <h1 class="text-3xl font-bold mb-4">Cuarto no encontrado</h1>
-            <p>El cuarto que buscas no existe.</p>
-          </div>
-        )
-      }
-      <button class="p-2 m-2 bg-blue-600"><a href="/">Salir</a></button>
-      <button class="p-2 m-2 bg-blue-600"><a href="#">Contactar</a></button>
-    </div>
-  </body>
+        </div>
+
+        <!-- Botones de navegación solo si hay más de una imagen -->
+        {imagenes.length > 1 && (
+          <>
+            <button
+              id="prev-btn"
+              class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+
+            <button
+              id="next-btn"
+              class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+
+            <!-- Indicadores -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+              {imagenes.map((_, index) => (
+                <button
+                  class={`indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors ${index === 0 ? 'active' : ''}`}
+                  data-slide={index}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div class="p-8">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-4">
+          {cuarto.name}
+        </h2>
+
+        <p class="text-gray-600 text-center leading-relaxed mb-4">
+          {cuarto.descripcion}
+        </p>
+
+        <div class="text-center mb-6">
+          <span class="text-2xl font-semibold text-blue-600">
+            ${cuarto.precio.toLocaleString()}
+          </span>
+          <span class="text-gray-500 ml-2">al mes</span>
+        </div>
+
+        <div class="flex justify-center space-x-4">
+          <button
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            Contactar
+          </button>
+          <a
+            href="/"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors duration-200 inline-block"
+          >
+            Regresar
+          </a>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <style>
+    .indicator.active {
+      background-color: white;
+    }
+  </style>
+
+  <script src="./script.js"></script>
+</body>
 </html>
