@@ -105,7 +105,6 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// src/pages/api/agregar-cuarto.js
 import { createClient } from '../../lib/supabase';
 
 export async function POST({ request, cookies }) {
@@ -127,9 +126,9 @@ export async function POST({ request, cookies }) {
       const timestamp = Date.now();
       const fileName = `cuarto_${timestamp}_${imageFile.name}`;
       
-      // Subir a Supabase Storage
+      // Subir a Supabase Storage - CORREGIDO: usar 'cuartos-imagenes'
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('cuartos-images') // Nombre del bucket que crearemos
+        .from('cuartos-imagenes') // ✅ Cambiado a 'cuartos-imagenes'
         .upload(fileName, imageFile, {
           cacheControl: '3600',
           upsert: false
@@ -146,9 +145,9 @@ export async function POST({ request, cookies }) {
         });
       }
 
-      // Obtener URL pública de la imagen
+      // Obtener URL pública de la imagen - CORREGIDO: usar 'cuartos-imagenes'
       const { data: urlData } = supabase.storage
-        .from('cuartos-images')
+        .from('cuartos-imagenes') // ✅ Cambiado a 'cuartos-imagenes'
         .getPublicUrl(fileName);
       
       imageUrl = urlData.publicUrl;
@@ -160,7 +159,7 @@ export async function POST({ request, cookies }) {
       name: formData.get('name'),
       descripcion: formData.get('descripcion'),
       precio: parseFloat(formData.get('precio')),
-      imagen_1: imageUrl, // Ahora guardamos la URL, no el File
+      imagen_1: imageUrl,
     };
 
     // Validación básica
