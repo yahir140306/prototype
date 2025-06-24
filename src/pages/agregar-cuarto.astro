@@ -613,7 +613,7 @@ import Layout from "../layouts/Layout.astro";
       if (response.ok) {
         showToast("¡Cuarto agregado exitosamente!", "success");
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = "/";
         }, 2000);
       } else {
         showToast("Error al agregar el cuarto. Intenta de nuevo.", "error");
