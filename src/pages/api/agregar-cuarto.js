@@ -1,4 +1,3 @@
-// src/pages/api/agregar-cuarto.js
 import { createClient } from '../../lib/supabase';
 
 export async function POST({ request, cookies }) {
@@ -12,7 +11,6 @@ export async function POST({ request, cookies }) {
     const descripcion = formData.get('descripcion');
     const precio = parseFloat(formData.get('precio'));
     
-    // Obtener las 3 imágenes posibles
     const imagen_1 = formData.get('imagen_1');
     const imagen_2 = formData.get('imagen_2');
     const imagen_3 = formData.get('imagen_3');
@@ -24,7 +22,6 @@ export async function POST({ request, cookies }) {
       imagen_3: imagen_3 ? `${imagen_3.name} - ${imagen_3.size} bytes` : 'No hay imagen'
     });
 
-    // Validaciones básicas
     if (!name || !descripcion || !precio) {
       console.log('❌ Faltan campos obligatorios');
       return new Response(
@@ -33,7 +30,6 @@ export async function POST({ request, cookies }) {
       );
     }
 
-    // Función para subir una imagen
     async function subirImagen(imagen, nombreBase) {
       if (!imagen || imagen.size === 0) return null;
       
@@ -72,7 +68,6 @@ export async function POST({ request, cookies }) {
       }
     }
 
-    // Subir todas las imágenes
     let imagen_1_url = null;
     let imagen_2_url = null;
     let imagen_3_url = null;
@@ -104,7 +99,6 @@ export async function POST({ request, cookies }) {
       imagen_3: imagen_3_url
     });
 
-    // Insertar cuarto en la base de datos
     const { data: cuartoData, error: dbError } = await supabase
       .from('cuartos')
       .insert([
@@ -112,7 +106,7 @@ export async function POST({ request, cookies }) {
           name,
           descripcion,
           precio,
-          imagen_principal: imagen_1_url, // La primera imagen es la principal
+          imagen_principal: imagen_1_url, 
           imagen_1: imagen_1_url,
           imagen_2: imagen_2_url,
           imagen_3: imagen_3_url,
