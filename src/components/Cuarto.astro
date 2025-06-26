@@ -1,6 +1,6 @@
 ---
-import { CUARTO } from "../logic/cuarto";
 import { createClient } from "../lib/supabase";
+import { decodeHexUrl } from "../utils/urlDecoder.js";
 
 const supabase = createClient({
   request: Astro.request,
@@ -9,106 +9,151 @@ const supabase = createClient({
 
 const { data: cuartos, error } = await supabase.from("cuartos").select("*");
 
-console.log("=== DEBUG CUARTOS LIST ===");
-cuartos?.forEach((cuarto, index) => {
-  console.log(`Cuarto ${index} - imagen_1:`, cuarto.imagen_1);
-});
-console.log("========================");
+console.log("=== DEBUG CONSULTA SUPABASE ===");
+console.log("Error:", error);
+console.log("Cuartos obtenidos:", cuartos);
+console.log("================================");
+
+// Procesar las URLs de los cuartos solo si hay datos
+const cuartosProcesados =
+  cuartos?.map((cuarto) => ({
+    ...cuarto,
+    imagen_1: decodeHexUrl(cuarto.imagen_1),
+  })) || [];
+
+console.log("=== DEBUG CUARTOS PROCESADOS ===");
+if (cuartos && cuartos.length > 0) {
+  cuartosProcesados.forEach((cuarto, index) => {
+    console.log(
+      `Cuarto ${index} - imagen_1 original:`,
+      cuartos[index]?.imagen_1
+    );
+    console.log(`Cuarto ${index} - imagen_1 decodificada:`, cuarto.imagen_1);
+  });
+} else {
+  console.log("No hay cuartos para procesar");
+}
+console.log("==============================");
 ---
 
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-center mb-8">Cuartos Disponibles</h1>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cuartos Disponibles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold text-center mb-8">Cuartos Disponibles</h1>
 
-  {
-    error && (
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        <strong>Error:</strong> {error.message}
-      </div>
-    )
-  }
-
-  {
-    cuartos && cuartos.length === 0 && (
-      <div class="text-center py-12">
-        <p class="text-gray-500 text-lg">
-          No hay cuartos disponibles en este momento.
-        </p>
-      </div>
-    )
-  }
-
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {
-      cuartos?.map((cuarto) => (
-        <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-white">
-          <div class="relative">
-            <img
-              src={cuarto.imagen_1 || "/Images/default.jpeg"}
-              alt={cuarto.name}
-              class="w-full h-48 object-cover"
-              loading="lazy"
-              onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
-            />
-            {/* Badge de disponibilidad opcional */}
-            <div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-              Disponible
-            </div>
+      {
+        error && (
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Error:</strong> {error.message || "Error desconocido"}
+            <details class="mt-2">
+              <summary class="cursor-pointer">Ver detalles técnicos</summary>
+              <pre class="mt-2 text-sm bg-red-50 p-2 rounded">
+                {JSON.stringify(error, null, 2)}
+              </pre>
+            </details>
           </div>
+        )
+      }
 
-          <div class="p-4">
-            <h2 class="text-xl font-semibold mb-2 text-gray-800 line-clamp-1">
-              {cuarto.name}
-            </h2>
-
-            <p class="text-gray-600 mb-3 line-clamp-2 text-sm leading-relaxed">
-              {cuarto.descripcion}
+      {
+        !error && cuartosProcesados && cuartosProcesados.length === 0 && (
+          <div class="text-center py-12">
+            <p class="text-gray-500 text-lg">
+              No hay cuartos disponibles en este momento.
             </p>
+            <p class="text-gray-400 text-sm mt-2">
+              ¿Quieres agregar el primer cuarto?
+            </p>
+          </div>
+        )
+      }
 
-            <div class="flex justify-between items-center">
-              <div class="flex flex-col">
-                <span class="text-2xl font-bold text-blue-600">
-                  ${cuarto.precio.toLocaleString()}
-                </span>
-                <span class="text-sm text-gray-500">por mes</span>
+      {
+        !error && !cuartosProcesados && (
+          <div class="text-center py-12">
+            <p class="text-gray-500 text-lg">Cargando cuartos...</p>
+          </div>
+        )
+      }
+
+      <div class="grid grid-cols-1 gap-6">
+        {
+          cuartosProcesados?.map((cuarto) => (
+            <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-white">
+              <div class="relative">
+                <img
+                  src={cuarto.imagen_1 || "/Images/default.jpeg"}
+                  alt={cuarto.name}
+                  class="w-full h-48 object-cover"
+                  loading="lazy"
+                  onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
+                />
+                <div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
+                  Disponible
+                </div>
               </div>
 
-              <a
-                href={`/cuarto/${cuarto.id}`}
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
-              >
-                Ver más
-              </a>
+              <div class="p-4">
+                <h2 class="text-xl font-semibold mb-2 text-gray-800 line-clamp-1">
+                  {cuarto.name}
+                </h2>
+
+                <p class="text-gray-600 mb-3 line-clamp-2 text-sm leading-relaxed">
+                  {cuarto.descripcion}
+                </p>
+
+                <div class="flex justify-between items-center">
+                  <div class="flex flex-col">
+                    <span class="text-2xl font-bold text-blue-600">
+                      ${cuarto.precio.toLocaleString()}
+                    </span>
+                    <span class="text-sm text-gray-500">por mes</span>
+                  </div>
+
+                  <a
+                    href={`/cuarto/${cuarto.id}`}
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
+                  >
+                    Ver más
+                  </a>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ))
-    }
-  </div>
+          ))
+        }
+      </div>
 
-  {/* Botón para agregar cuarto (solo si es admin) */}
-  <div class="text-center mt-8">
-    <a
-      href="/agregar-cuarto"
-      class="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
-    >
-      + Agregar Nuevo Cuarto
-    </a>
-  </div>
-</div>
+      <div class="text-center mt-8">
+        <a
+          href="/agregar-cuarto"
+          class="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
+        >
+          + Agregar Nuevo Cuarto
+        </a>
+      </div>
+    </div>
 
-<style>
-  /* Utility classes para limitar líneas de texto */
-  .line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+    <style>
+      /* Utility classes para limitar líneas de texto */
+      .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
 
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-</style>
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    </style>
+  </body>
+</html>
