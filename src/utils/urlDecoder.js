@@ -1,4 +1,10 @@
 // utils/urlDecoder.js
+
+/**
+ * Decodifica una URL que puede estar en formato hexadecimal
+ * @param {string} hexUrl - URL en formato hex, bytea de PostgreSQL, o URL normal
+ * @returns {string|null} - URL decodificada o null si hay error
+ */
 export function decodeHexUrl(hexUrl) {
   // Verificar que hexUrl existe y no es null/undefined
   if (!hexUrl || typeof hexUrl !== 'string') {
@@ -12,10 +18,18 @@ export function decodeHexUrl(hexUrl) {
       return hexUrl;
     }
 
-    // Si es una cadena hexadecimal, intentar decodificarla
+    // Si es bytea de PostgreSQL (empieza con \x)
+    if (hexUrl.startsWith('\\x')) {
+      const hex = hexUrl.slice(2); // remover \x
+      const decoded = Buffer.from(hex, 'hex').toString('utf8');
+      console.log('URL decodificada desde bytea:', decoded);
+      return decoded;
+    }
+
+    // Si es una cadena hexadecimal pura
     if (hexUrl.match(/^[0-9a-fA-F]+$/)) {
       const decoded = Buffer.from(hexUrl, 'hex').toString('utf8');
-      console.log('URL decodificada:', decoded);
+      console.log('URL decodificada desde hex:', decoded);
       return decoded;
     }
 
@@ -28,7 +42,11 @@ export function decodeHexUrl(hexUrl) {
   }
 }
 
-// Función alternativa si usas codificación URL estándar
+/**
+ * Decodifica una URL con codificación URL estándar (percent-encoding)
+ * @param {string} encodedUrl - URL codificada con %
+ * @returns {string|null} - URL decodificada
+ */
 export function decodeUrl(encodedUrl) {
   if (!encodedUrl || typeof encodedUrl !== 'string') {
     return null;
@@ -40,29 +58,4 @@ export function decodeUrl(encodedUrl) {
     console.error('Error decodificando URL:', error);
     return encodedUrl; // Devolver la original si hay error
   }
-}
-
-function decodeHexUrl(hexValue) {
-  if (!hexValue || hexValue === null) {
-    return null;
-  }
-  
-  // Si ya es una URL normal, devolverla tal cual
-  if (typeof hexValue === 'string' && hexValue.startsWith('http')) {
-    return hexValue;
-  }
-  
-  // Si es un buffer/bytea, convertir
-  if (hexValue.startsWith('\\x')) {
-    try {
-      const hex = hexValue.slice(2); // remover \x
-      const decoded = Buffer.from(hex, 'hex').toString('utf8');
-      return decoded;
-    } catch (error) {
-      console.error('Error decodificando hex:', error);
-      return null;
-    }
-  }
-  
-  return hexValue;
 }
