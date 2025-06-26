@@ -2,6 +2,29 @@ import { defineAction, type ActionAPIContext } from "astro:actions";
 import { z } from "astro:schema";
 import { createClient } from "../lib/supabase";
 
+// Opción 1: Usando variables de entorno
+const getRedirectUrl = () => {
+	// Verifica si estás en producción o desarrollo
+	const isProduction = import.meta.env.PROD;
+	
+	if (isProduction) {
+		return "https://project-liard-alpha-81.vercel.app/api/exchange";
+	} else {
+		return "http://localhost:4321/api/exchange";
+	}
+};
+
+// Opción 2: Usando una variable de entorno específica
+const getRedirectUrlFromEnv = () => {
+	return import.meta.env.PUBLIC_SITE_URL + "/api/exchange" || "http://localhost:4321/api/exchange";
+};
+
+// Opción 3: Detectando desde el request
+const getRedirectUrlFromRequest = (request: Request) => {
+	const url = new URL(request.url);
+	return `${url.protocol}//${url.host}/api/exchange`;
+};
+
 const emailSignUp = async (
 	{
 		email,
@@ -19,11 +42,15 @@ const emailSignUp = async (
 
 		console.log("Request cookies:", context.request.headers.get("Cookie"));
 
+		// Usa cualquiera de estos métodos:
+		const redirectUrl = getRedirectUrlFromRequest(context.request); // Opción 3
+		// const redirectUrl = getRedirectUrl(); // Opción 1
+		// const redirectUrl = getRedirectUrlFromEnv(); // Opción 2
+
 		const { data, error } = await supabase.auth.signInWithOtp({
 			email,
 			options: {
-				emailRedirectTo: "https://project-liard-alpha-81.vercel.app/api/exchange",
-				// emailRedirectTo: "http://localhost:4321/api/exchange",
+				emailRedirectTo: redirectUrl,
 			},
 		});
 
