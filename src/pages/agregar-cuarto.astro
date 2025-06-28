@@ -752,4 +752,311 @@ import Layout from "../layouts/Layout.astro";
       loadingSpinner?.classList.add("hidden");
     }
   });
+
+  // Agregar estas mejoras al script existente
+
+  // 1. Detectar si es dispositivo móvil
+  function isMobileDevice() {
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.innerWidth <= 768
+    );
+  }
+
+  // 2. Configuración específica para móviles
+  const mobileConfig = {
+    maxFileSize: isMobileDevice() ? 2 * 1024 * 1024 : 5 * 1024 * 1024, // 2MB para móvil, 5MB para desktop
+    maxWidth: isMobileDevice() ? 1280 : 1920,
+    maxHeight: isMobileDevice() ? 720 : 1080,
+    quality: isMobileDevice() ? 0.6 : 0.8,
+    timeout: isMobileDevice() ? 90000 : 60000, // 90s para móvil
+  };
+
+  // 3. Compresión mejorada para móviles
+  async function compressImageForMobile(file, maxSize) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      img.onload = () => {
+        // Calcular dimensiones optimizadas para móvil
+        let { width, height } = img;
+        const maxWidth = mobileConfig.maxWidth;
+        const maxHeight = mobileConfig.maxHeight;
+
+        // Reducir dimensiones más agresivamente en móvil
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        if (ratio < 1) {
+          width *= ratio;
+          height *= ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Dibujar imagen con mejor calidad
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Comprimir con diferentes calidades hasta lograr el tamaño objetivo
+        let quality = mobileConfig.quality;
+
+        const tryCompress = (q) => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob && (blob.size <= maxSize || q <= 0.3)) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else if (q > 0.3) {
+                // Reducir calidad y intentar de nuevo
+                tryCompress(q - 0.1);
+              } else {
+                // Si no se puede comprimir más, devolver archivo original
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            q
+          );
+        };
+
+        tryCompress(quality);
+      };
+
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  // 4. Validación mejorada de archivos para móvil
+  async function handleImageSelectMobile(imageNumber, file) {
+    const maxSize = mobileConfig.maxFileSize;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith("image/")) {
+      showToast("Por favor selecciona un archivo de imagen válido.", "error");
+      return;
+    }
+
+    // Validar tamaño inicial
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB límite absoluto
+      showToast("La imagen es demasiado grande. Máximo 10MB.", "error");
+      return;
+    }
+
+    // Mostrar progreso para archivos grandes en móvil
+    if (file.size > 1024 * 1024 && isMobileDevice()) {
+      showToast("Procesando imagen...", "info");
+    }
+
+    try {
+      // Comprimir imagen
+      const compressedFile = await compressImageForMobile(file, maxSize);
+
+      // Actualizar el input con el archivo comprimido
+      const input = document.getElementById(`imagen_${imageNumber}`);
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(compressedFile);
+      input.files = dataTransfer.files;
+
+      // Mostrar preview
+      showImagePreview(imageNumber, compressedFile);
+
+      if (compressedFile.size < file.size) {
+        showToast(
+          `Imagen optimizada: ${(file.size / 1024 / 1024).toFixed(1)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB`,
+          "success"
+        );
+      }
+    } catch (error) {
+      console.error("Error al procesar imagen:", error);
+      showToast("Error al procesar la imagen. Intenta con otra.", "error");
+    }
+  }
+
+  // 5. Función para mostrar preview
+  function showImagePreview(imageNumber, file) {
+    const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
+    const preview = document.getElementById(`preview-${imageNumber}`);
+    const img = preview?.querySelector("img");
+
+    if (img) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result;
+        uploadArea?.classList.add("hidden");
+        preview?.classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // 6. Envío mejorado para móviles con chunks
+  async function submitFormMobile(formData) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      mobileConfig.timeout
+    );
+
+    try {
+      // Verificar conexión antes de enviar
+      if (!navigator.onLine) {
+        throw new Error("Sin conexión a internet");
+      }
+
+      const response = await fetch("/api/agregar-cuarto", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+        headers: {
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  }
+
+  // 7. Monitoreo de conectividad
+  function setupConnectivityMonitoring() {
+    window.addEventListener("online", () => {
+      showToast("Conexión restaurada", "success");
+    });
+
+    window.addEventListener("offline", () => {
+      showToast("Sin conexión a internet", "error");
+    });
+  }
+
+  // 8. Mejorar el manejo de errores en el form submit
+  function setupMobileFormSubmit() {
+    const form = document.getElementById("room-form");
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Verificar conectividad
+      if (!navigator.onLine) {
+        showToast("Sin conexión a internet. Revisa tu conexión.", "error");
+        return;
+      }
+
+      // Validaciones existentes...
+
+      const submitBtn = document.getElementById("submit-btn");
+      const btnText = document.getElementById("btn-text");
+      const loadingSpinner = document.getElementById("loading-spinner");
+
+      submitBtn.disabled = true;
+      btnText.textContent = isMobileDevice() ? "Subiendo..." : "Agregando...";
+      loadingSpinner?.classList.remove("hidden");
+
+      try {
+        const formData = new FormData(form);
+
+        // Log para debug en móvil
+        if (isMobileDevice()) {
+          console.log("Enviando desde dispositivo móvil");
+
+          // Verificar tamaños de archivos
+          for (let [key, value] of formData.entries()) {
+            if (value instanceof File && value.size > 0) {
+              console.log(`${key}: ${(value.size / 1024 / 1024).toFixed(2)}MB`);
+            }
+          }
+        }
+
+        const result = await submitFormMobile(formData);
+
+        if (result.success) {
+          showToast("¡Cuarto agregado exitosamente!", "success");
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 2000);
+        } else {
+          showToast(result.error || "Error al agregar el cuarto.", "error");
+        }
+      } catch (error) {
+        console.error("Error al enviar formulario:", error);
+
+        let errorMessage = "Error de conexión.";
+
+        if (error.name === "AbortError") {
+          errorMessage =
+            "La subida tardó demasiado. Intenta con imágenes más pequeñas.";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage = "Error de red. Verifica tu conexión.";
+        } else if (
+          error.message.includes("413") ||
+          error.message.includes("too large")
+        ) {
+          errorMessage =
+            "Archivos muy grandes. Reduce el tamaño de las imágenes.";
+        }
+
+        showToast(errorMessage, "error");
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = "Agregar Cuarto";
+        loadingSpinner?.classList.add("hidden");
+      }
+    });
+  }
+
+  // 9. Inicialización mejorada
+  function initializeMobileOptimizations() {
+    // Solo aplicar optimizaciones móviles si es necesario
+    if (isMobileDevice()) {
+      console.log("Aplicando optimizaciones móviles");
+
+      // Reemplazar la función de manejo de imágenes
+      [1, 2, 3].forEach((num) => {
+        const input = document.getElementById(`imagen_${num}`);
+        const uploadArea = document.getElementById(`upload-area-${num}`);
+
+        // Remover listeners anteriores y agregar nuevos
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+
+        newInput.addEventListener("change", (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleImageSelectMobile(num, file);
+          }
+        });
+
+        uploadArea?.addEventListener("click", () => newInput.click());
+      });
+
+      // Configurar monitoreo de conectividad
+      setupConnectivityMonitoring();
+
+      // Configurar el form submit mejorado
+      setupMobileFormSubmit();
+
+      // Mostrar mensaje informativo
+      showToast("Optimizaciones móviles activadas", "info");
+    }
+  }
+
+  // Inicializar cuando el DOM esté listo
+  document.addEventListener("DOMContentLoaded", initializeMobileOptimizations);
 </script>
