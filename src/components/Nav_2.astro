@@ -1,0 +1,66 @@
+---
+import { items } from "../logic/itemNav.js";
+
+// FORZAR usuario como NO autenticado para la prueba
+const user = null;
+
+// Mostrar en consola para debug
+console.log("=== DEBUG NAV ===");
+console.log("Usuario:", user);
+console.log("Items importados:", items);
+
+// Filtrar items
+const filteredItems = items.filter((item) => {
+  const shouldShow = !item.requiresAuth || (item.requiresAuth && user);
+  console.log(
+    `${item.label}: requiresAuth=${item.requiresAuth}, user=${!!user}, shouldShow=${shouldShow}`
+  );
+  return shouldShow;
+});
+
+console.log("Items después del filtro:", filteredItems);
+console.log("=== FIN DEBUG ===");
+---
+
+<div class="bg-white p-4 border">
+  <h2>RANTU - Test de Navegación</h2>
+
+  <!-- Mostrar estado de debug -->
+  <div class="bg-gray-100 p-2 mb-4 text-sm">
+    <strong>Debug Info:</strong><br />
+    Usuario autenticado: {user ? "SÍ" : "NO"}<br />
+    Items totales: {items.length}<br />
+    Items filtrados: {filteredItems.length}<br />
+    Items mostrados: {filteredItems.map((i) => i.label).join(", ")}
+  </div>
+
+  <!-- Navegación -->
+  <nav class="flex gap-4">
+    {
+      filteredItems.map((item) => (
+        <a
+          href={item.href}
+          class={
+            item.isButton
+              ? "bg-blue-500 text-white px-4 py-2 rounded"
+              : "text-blue-600 hover:underline"
+          }
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <!-- Mostrar TODOS los items para comparar -->
+  <div class="mt-4 p-2 bg-yellow-100 text-sm">
+    <strong>TODOS los items (sin filtro):</strong><br />
+    {
+      items.map((item) => (
+        <div>
+          {item.label} - requiresAuth: {item.requiresAuth ? "SÍ" : "NO"}
+        </div>
+      ))
+    }
+  </div>
+</div>

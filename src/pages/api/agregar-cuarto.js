@@ -5,7 +5,14 @@ export async function POST({ request, cookies }) {
   
   try {
     const supabase = createClient({ request, cookies });
-    const formData = await request.formData();
+    
+    // Add timeout handling for mobile
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 45000); // 45 seconds
+    });
+    
+    const formDataPromise = request.formData();
+    const formData = await Promise.race([formDataPromise, timeoutPromise]);
     
     const name = formData.get('name');
     const descripcion = formData.get('descripcion');
@@ -22,12 +29,32 @@ export async function POST({ request, cookies }) {
       imagen_3: imagen_3 ? `${imagen_3.name} - ${imagen_3.size} bytes` : 'No hay imagen'
     });
 
-    if (!name || !descripcion || !precio) {
+    // Validate required fields
+    if (!name || !descripcion || !precio || isNaN(precio)) {
       console.log('❌ Faltan campos obligatorios');
       return new Response(
-        JSON.stringify({ error: 'Faltan campos obligatorios' }),
+        JSON.stringify({ 
+          error: 'Faltan campos obligatorios',
+          success: false 
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate image sizes (5MB max for mobile compatibility)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const images = [imagen_1, imagen_2, imagen_3].filter(img => img && img.size > 0);
+    
+    for (const img of images) {
+      if (img.size > maxSize) {
+        return new Response(
+          JSON.stringify({ 
+            error: `La imagen ${img.name} es muy grande. Máximo 5MB.`,
+            success: false 
+          }),
+          { status: 413, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     async function subirImagen(imagen, nombreBase) {
@@ -47,12 +74,21 @@ export async function POST({ request, cookies }) {
           .from(BUCKET_NAME)
           .upload(fileName, imagen, {
             cacheControl: '3600',
-            upsert: false
+            upsert: false,
+            duplex: 'half' // Better for mobile uploads
           });
 
         if (uploadError) {
           console.error(`💥 Error subiendo ${nombreBase}:`, uploadError);
-          throw new Error(`Error subiendo ${nombreBase}: ${uploadError.message}`);
+          
+          // More specific error messages
+          if (uploadError.message.includes('413') || uploadError.message.includes('too large')) {
+            throw new Error(`La imagen ${nombreBase} es muy grande. Reduce el tamaño.`);
+          } else if (uploadError.message.includes('timeout')) {
+            throw new Error(`Timeout subiendo ${nombreBase}. Intenta de nuevo.`);
+          } else {
+            throw new Error(`Error subiendo ${nombreBase}: ${uploadError.message}`);
+          }
         }
 
         const { data: publicUrlData } = supabase.storage
@@ -83,10 +119,12 @@ export async function POST({ request, cookies }) {
         imagen_3_url = await subirImagen(imagen_3, 'cuarto_3');
       }
     } catch (storageError) {
+      console.error('💥 Error de almacenamiento:', storageError);
       return new Response(
         JSON.stringify({ 
           error: 'Error procesando imágenes', 
-          details: storageError.message 
+          details: storageError.message,
+          success: false 
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
@@ -121,7 +159,8 @@ export async function POST({ request, cookies }) {
       return new Response(
         JSON.stringify({ 
           error: 'Error guardando cuarto', 
-          details: dbError.message 
+          details: dbError.message,
+          success: false 
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
@@ -145,12 +184,29 @@ export async function POST({ request, cookies }) {
 
   } catch (error) {
     console.error('💥 Error general:', error);
+    
+    // Handle specific mobile errors
+    let errorMessage = 'Error interno del servidor';
+    let statusCode = 500;
+    
+    if (error.message === 'Request timeout') {
+      errorMessage = 'La solicitud tardó demasiado. Intenta de nuevo.';
+      statusCode = 408;
+    } else if (error.message.includes('FormData')) {
+      errorMessage = 'Error procesando los datos del formulario.';
+      statusCode = 400;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Error interno del servidor', 
-        details: error.message 
+        error: errorMessage, 
+        details: error.message,
+        success: false 
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: statusCode, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
     );
   }
 }

@@ -1,19 +1,28 @@
 ---
 import "../styles/global.css";
-import Nav from "../components/Nav.astro";
+// import Nav from "../components/Nav.astro";
+import Nav2 from "../components/Nav.astro";
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Mobile optimizations -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#4f46e5" />
+    <!-- Preconnect for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>R 4 N T U</title>
   </head>
   <body>
-    <Nav />
+    <!-- <Nav /> -->
+    <Nav2 />
     <slot />
   </body>
 </html>

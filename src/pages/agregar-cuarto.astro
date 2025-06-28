@@ -244,7 +244,7 @@ import Layout from "../layouts/Layout.astro";
                       >
                       o arrastra y suelta
                     </p>
-                    <p class="text-xs text-gray-500">PNG, JPG hasta 10MB</p>
+                    <p class="text-xs text-gray-500">PNG, JPG hasta 5MB</p>
                   </div>
                   <div id="preview-1" class="hidden mt-2">
                     <img class="w-full h-32 object-cover rounded-lg" />
@@ -293,7 +293,7 @@ import Layout from "../layouts/Layout.astro";
                         >Haz clic para subir</span
                       >
                     </p>
-                    <p class="text-xs text-gray-500">PNG, JPG hasta 10MB</p>
+                    <p class="text-xs text-gray-500">PNG, JPG hasta 5MB</p>
                   </div>
                   <div id="preview-2" class="hidden mt-2">
                     <img class="w-full h-32 object-cover rounded-lg" />
@@ -447,10 +447,11 @@ import Layout from "../layouts/Layout.astro";
     });
   }
 
-  function handleImageSelect(imageNumber: number, file: File) {
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      showToast("La imagen es muy grande. Máximo 10MB.", "error");
+  async function handleImageSelect(imageNumber: number, file: File) {
+    // Validate file size (5MB max for mobile compatibility)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      showToast("La imagen es muy grande. Máximo 5MB.", "error");
       return;
     }
 
@@ -459,6 +460,9 @@ import Layout from "../layouts/Layout.astro";
       showToast("Por favor selecciona un archivo de imagen válido.", "error");
       return;
     }
+
+    // Compress image if necessary for mobile
+    const compressedFile = await compressImageIfNeeded(file, maxSize);
 
     const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
     const preview = document.getElementById(`preview-${imageNumber}`);
@@ -471,8 +475,67 @@ import Layout from "../layouts/Layout.astro";
         uploadArea?.classList.add("hidden");
         preview?.classList.remove("hidden");
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
     }
+  }
+
+  // Image compression function for mobile compatibility
+  async function compressImageIfNeeded(
+    file: File,
+    maxSize: number
+  ): Promise<File> {
+    if (file.size <= maxSize) {
+      return file;
+    }
+
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions
+        const maxWidth = 1920;
+        const maxHeight = 1080;
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          0.8 // Compression quality
+        );
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
   }
 
   // Remove image function
@@ -557,7 +620,7 @@ import Layout from "../layouts/Layout.astro";
     }, 5000);
   }
 
-  // Form submission
+  // Form submission with mobile optimizations
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -605,22 +668,83 @@ import Layout from "../layouts/Layout.astro";
 
     try {
       const formData = new FormData(form);
-      const response = await fetch("/api/agregar-cuarto", {
-        method: "POST",
-        body: formData,
-      });
 
-      if (response.ok) {
+      // Add timeout and retry logic for mobile
+      const uploadWithRetry = async (retries = 3): Promise<Response> => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+            const response = await fetch("/api/agregar-cuarto", {
+              method: "POST",
+              body: formData,
+              signal: controller.signal,
+              headers: {
+                // Add headers for mobile compatibility
+                "Cache-Control": "no-cache",
+              },
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+            }
+
+            return response;
+          } catch (error) {
+            console.warn(`Intento ${i + 1} falló:`, error);
+
+            if (i === retries - 1) {
+              throw error;
+            }
+
+            // Wait before retry (exponential backoff)
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, i) * 1000)
+            );
+          }
+        }
+        throw new Error("All retries failed");
+      };
+
+      const response = await uploadWithRetry();
+      const result = await response.json();
+
+      if (result.success) {
         showToast("¡Cuarto agregado exitosamente!", "success");
         setTimeout(() => {
           window.location.href = "/";
         }, 2000);
       } else {
-        showToast("Error al agregar el cuarto. Intenta de nuevo.", "error");
+        showToast(
+          result.error || "Error al agregar el cuarto. Intenta de nuevo.",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error:", error);
-      showToast("Error de conexión. Intenta de nuevo.", "error");
+
+      // More specific error messages for mobile
+      let errorMessage = "Error de conexión. Intenta de nuevo.";
+
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage =
+            "La subida tardó demasiado. Verifica tu conexión e intenta de nuevo.";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Sin conexión a internet. Verifica tu conexión e intenta de nuevo.";
+        } else if (error.message.includes("413")) {
+          errorMessage =
+            "Las imágenes son muy grandes. Reduce el tamaño e intenta de nuevo.";
+        }
+      }
+
+      showToast(errorMessage, "error");
     } finally {
       // Reset button state
       submitBtn.disabled = false;
