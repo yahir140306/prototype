@@ -408,62 +408,122 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-  // Image upload functionality
-  function setupImageUpload(imageNumber: number) {
-    const input = document.getElementById(
-      `imagen_${imageNumber}`
-    ) as HTMLInputElement;
+  // Detectar si es dispositivo móvil
+  function isMobileDevice() {
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.innerWidth <= 768
+    );
+  }
+
+  // Configuración específica para móviles
+  const mobileConfig = {
+    maxFileSize: isMobileDevice() ? 2 * 1024 * 1024 : 5 * 1024 * 1024, // 2MB para móvil, 5MB para desktop
+    maxWidth: isMobileDevice() ? 1280 : 1920,
+    maxHeight: isMobileDevice() ? 720 : 1080,
+    quality: isMobileDevice() ? 0.6 : 0.8,
+    timeout: isMobileDevice() ? 90000 : 60000, // 90s para móvil
+  };
+
+  // Variable para controlar si ya se inicializaron los eventos
+  let eventsInitialized = false;
+
+  // Image upload functionality UNIFICADA
+  function setupImageUpload(imageNumber) {
+    const input = document.getElementById(`imagen_${imageNumber}`);
     const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
     const preview = document.getElementById(`preview-${imageNumber}`);
 
-    uploadArea?.addEventListener("click", () => input.click());
+    if (!input || !uploadArea || !preview) return;
+
+    // Remover cualquier listener previo para evitar duplicados
+    const newUploadArea = uploadArea.cloneNode(true);
+    const newInput = input.cloneNode(true);
+
+    uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
+    input.parentNode.replaceChild(newInput, input);
+
+    // Click event
+    newUploadArea.addEventListener("click", () => newInput.click());
 
     // Drag and drop functionality
-    uploadArea?.addEventListener("dragover", (e) => {
+    newUploadArea.addEventListener("dragover", (e) => {
       e.preventDefault();
-      uploadArea.classList.add("border-indigo-500", "bg-indigo-50");
+      newUploadArea.classList.add("border-indigo-500", "bg-indigo-50");
     });
 
-    uploadArea?.addEventListener("dragleave", () => {
-      uploadArea.classList.remove("border-indigo-500", "bg-indigo-50");
+    newUploadArea.addEventListener("dragleave", () => {
+      newUploadArea.classList.remove("border-indigo-500", "bg-indigo-50");
     });
 
-    uploadArea?.addEventListener("drop", (e) => {
+    newUploadArea.addEventListener("drop", (e) => {
       e.preventDefault();
-      uploadArea.classList.remove("border-indigo-500", "bg-indigo-50");
+      newUploadArea.classList.remove("border-indigo-500", "bg-indigo-50");
 
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
-        input.files = files;
         handleImageSelect(imageNumber, files[0]);
       }
     });
 
-    input?.addEventListener("change", (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
+    newInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
       if (file) {
         handleImageSelect(imageNumber, file);
       }
     });
   }
 
-  async function handleImageSelect(imageNumber: number, file: File) {
-    // Validate file size (5MB max for mobile compatibility)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      showToast("La imagen es muy grande. Máximo 5MB.", "error");
-      return;
-    }
+  // Función unificada para manejar selección de imágenes
+  async function handleImageSelect(imageNumber, file) {
+    const maxSize = mobileConfig.maxFileSize;
 
-    // Validate file type
+    // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
       showToast("Por favor selecciona un archivo de imagen válido.", "error");
       return;
     }
 
-    // Compress image if necessary for mobile
-    const compressedFile = await compressImageIfNeeded(file, maxSize);
+    // Validar tamaño inicial
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB límite absoluto
+      showToast("La imagen es demasiado grande. Máximo 10MB.", "error");
+      return;
+    }
 
+    // Mostrar progreso para archivos grandes en móvil
+    if (file.size > 1024 * 1024 && isMobileDevice()) {
+      showToast("Procesando imagen...", "info");
+    }
+
+    try {
+      // Comprimir imagen si es necesario
+      const processedFile = await compressImageIfNeeded(file, maxSize);
+
+      // Actualizar el input con el archivo procesado
+      const input = document.getElementById(`imagen_${imageNumber}`);
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(processedFile);
+      input.files = dataTransfer.files;
+
+      // Mostrar preview
+      showImagePreview(imageNumber, processedFile);
+
+      if (processedFile.size < file.size) {
+        showToast(
+          `Imagen optimizada: ${(file.size / 1024 / 1024).toFixed(1)}MB → ${(processedFile.size / 1024 / 1024).toFixed(1)}MB`,
+          "success"
+        );
+      }
+    } catch (error) {
+      console.error("Error al procesar imagen:", error);
+      showToast("Error al procesar la imagen. Intenta con otra.", "error");
+    }
+  }
+
+  // Función para mostrar preview
+  function showImagePreview(imageNumber, file) {
     const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
     const preview = document.getElementById(`preview-${imageNumber}`);
     const img = preview?.querySelector("img");
@@ -471,19 +531,16 @@ import Layout from "../layouts/Layout.astro";
     if (img) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        img.src = e.target?.result as string;
+        img.src = e.target?.result;
         uploadArea?.classList.add("hidden");
         preview?.classList.remove("hidden");
       };
-      reader.readAsDataURL(compressedFile);
+      reader.readAsDataURL(file);
     }
   }
 
-  // Image compression function for mobile compatibility
-  async function compressImageIfNeeded(
-    file: File,
-    maxSize: number
-  ): Promise<File> {
+  // Image compression function mejorada
+  async function compressImageIfNeeded(file, maxSize) {
     if (file.size <= maxSize) {
       return file;
     }
@@ -495,76 +552,77 @@ import Layout from "../layouts/Layout.astro";
 
       img.onload = () => {
         // Calculate new dimensions
-        const maxWidth = 1920;
-        const maxHeight = 1080;
         let { width, height } = img;
+        const maxWidth = mobileConfig.maxWidth;
+        const maxHeight = mobileConfig.maxHeight;
 
-        if (width > height) {
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        if (ratio < 1) {
+          width *= ratio;
+          height *= ratio;
         }
 
         canvas.width = width;
         canvas.height = height;
 
         // Draw and compress
-        ctx?.drawImage(img, 0, 0, width, height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              });
-              resolve(compressedFile);
-            } else {
-              resolve(file);
-            }
-          },
-          "image/jpeg",
-          0.8 // Compression quality
-        );
+        // Try different quality levels until we get the right size
+        let quality = mobileConfig.quality;
+
+        const tryCompress = (q) => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob && (blob.size <= maxSize || q <= 0.3)) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else if (q > 0.3) {
+                tryCompress(q - 0.1);
+              } else {
+                resolve(file);
+              }
+            },
+            "image/jpeg",
+            q
+          );
+        };
+
+        tryCompress(quality);
       };
 
+      img.onerror = () => resolve(file);
       img.src = URL.createObjectURL(file);
     });
   }
 
   // Remove image function
-  function removeImage(imageNumber: number) {
-    const input = document.getElementById(
-      `imagen_${imageNumber}`
-    ) as HTMLInputElement;
+  function removeImage(imageNumber) {
+    const input = document.getElementById(`imagen_${imageNumber}`);
     const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
     const preview = document.getElementById(`preview-${imageNumber}`);
 
-    input.value = "";
+    if (input) input.value = "";
     uploadArea?.classList.remove("hidden");
     preview?.classList.add("hidden");
   }
 
-  // Initialize image uploads
-  [1, 2, 3].forEach((num) => setupImageUpload(num));
-
   // Character counter for description
-  const descripcionInput = document.getElementById(
-    "descripcion"
-  ) as HTMLTextAreaElement;
-  const charCount = document.getElementById("char-count");
+  function setupDescriptionCounter() {
+    const descripcionInput = document.getElementById("descripcion");
+    const charCount = document.getElementById("char-count");
 
-  descripcionInput?.addEventListener("input", () => {
-    const length = descripcionInput.value.length;
-    const maxLength = 500;
+    if (!descripcionInput || !charCount) return;
 
-    if (charCount) {
+    descripcionInput.addEventListener("input", () => {
+      const length = descripcionInput.value.length;
+      const maxLength = 500;
+
       charCount.textContent = `${length} / ${maxLength} caracteres`;
 
       if (length > maxLength) {
@@ -574,20 +632,11 @@ import Layout from "../layouts/Layout.astro";
         charCount.classList.remove("text-red-500");
         charCount.classList.add("text-gray-500");
       }
-    }
-  });
-
-  // Form validation
-  const form = document.getElementById("room-form") as HTMLFormElement;
-  const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
-  const btnText = document.getElementById("btn-text");
-  const loadingSpinner = document.getElementById("loading-spinner");
+    });
+  }
 
   // Toast notification function
-  function showToast(
-    message: string,
-    type: "success" | "error" | "info" = "info"
-  ) {
+  function showToast(message, type = "info") {
     const toastColors = {
       success: "bg-green-500",
       error: "bg-red-500",
@@ -620,286 +669,8 @@ import Layout from "../layouts/Layout.astro";
     }, 5000);
   }
 
-  // Form submission with mobile optimizations
-  form?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    // Validate required fields
-    let hasErrors = false;
-
-    // Validate name
-    const nameInput = document.getElementById("name") as HTMLInputElement;
-    const nameError = document.getElementById("name-error");
-    if (!nameInput.value.trim()) {
-      nameError?.classList.remove("hidden");
-      hasErrors = true;
-    } else {
-      nameError?.classList.add("hidden");
-    }
-
-    // Validate description
-    const descripcionError = document.getElementById("descripcion-error");
-    if (!descripcionInput.value.trim()) {
-      descripcionError?.classList.remove("hidden");
-      hasErrors = true;
-    } else {
-      descripcionError?.classList.add("hidden");
-    }
-
-    // Validate price
-    const precioInput = document.getElementById("precio") as HTMLInputElement;
-    const precioError = document.getElementById("precio-error");
-    if (!precioInput.value || parseFloat(precioInput.value) <= 0) {
-      precioError?.classList.remove("hidden");
-      hasErrors = true;
-    } else {
-      precioError?.classList.add("hidden");
-    }
-
-    if (hasErrors) {
-      showToast("Por favor corrige los errores antes de continuar.", "error");
-      return;
-    }
-
-    // Show loading state
-    submitBtn.disabled = true;
-    btnText!.textContent = "Agregando...";
-    loadingSpinner?.classList.remove("hidden");
-
-    try {
-      const formData = new FormData(form);
-
-      // Add timeout and retry logic for mobile
-      const uploadWithRetry = async (retries = 3): Promise<Response> => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-
-            const response = await fetch("/api/agregar-cuarto", {
-              method: "POST",
-              body: formData,
-              signal: controller.signal,
-              headers: {
-                // Add headers for mobile compatibility
-                "Cache-Control": "no-cache",
-              },
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-              throw new Error(
-                `HTTP ${response.status}: ${response.statusText}`
-              );
-            }
-
-            return response;
-          } catch (error) {
-            console.warn(`Intento ${i + 1} falló:`, error);
-
-            if (i === retries - 1) {
-              throw error;
-            }
-
-            // Wait before retry (exponential backoff)
-            await new Promise((resolve) =>
-              setTimeout(resolve, Math.pow(2, i) * 1000)
-            );
-          }
-        }
-        throw new Error("All retries failed");
-      };
-
-      const response = await uploadWithRetry();
-      const result = await response.json();
-
-      if (result.success) {
-        showToast("¡Cuarto agregado exitosamente!", "success");
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
-      } else {
-        showToast(
-          result.error || "Error al agregar el cuarto. Intenta de nuevo.",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Error:", error);
-
-      // More specific error messages for mobile
-      let errorMessage = "Error de conexión. Intenta de nuevo.";
-
-      if (error instanceof Error) {
-        if (error.name === "AbortError") {
-          errorMessage =
-            "La subida tardó demasiado. Verifica tu conexión e intenta de nuevo.";
-        } else if (error.message.includes("Failed to fetch")) {
-          errorMessage =
-            "Sin conexión a internet. Verifica tu conexión e intenta de nuevo.";
-        } else if (error.message.includes("413")) {
-          errorMessage =
-            "Las imágenes son muy grandes. Reduce el tamaño e intenta de nuevo.";
-        }
-      }
-
-      showToast(errorMessage, "error");
-    } finally {
-      // Reset button state
-      submitBtn.disabled = false;
-      btnText!.textContent = "Agregar Cuarto";
-      loadingSpinner?.classList.add("hidden");
-    }
-  });
-
-  // Agregar estas mejoras al script existente
-
-  // 1. Detectar si es dispositivo móvil
-  function isMobileDevice() {
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      ) || window.innerWidth <= 768
-    );
-  }
-
-  // 2. Configuración específica para móviles
-  const mobileConfig = {
-    maxFileSize: isMobileDevice() ? 2 * 1024 * 1024 : 5 * 1024 * 1024, // 2MB para móvil, 5MB para desktop
-    maxWidth: isMobileDevice() ? 1280 : 1920,
-    maxHeight: isMobileDevice() ? 720 : 1080,
-    quality: isMobileDevice() ? 0.6 : 0.8,
-    timeout: isMobileDevice() ? 90000 : 60000, // 90s para móvil
-  };
-
-  // 3. Compresión mejorada para móviles
-  async function compressImageForMobile(file, maxSize) {
-    return new Promise((resolve) => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const img = new Image();
-
-      img.onload = () => {
-        // Calcular dimensiones optimizadas para móvil
-        let { width, height } = img;
-        const maxWidth = mobileConfig.maxWidth;
-        const maxHeight = mobileConfig.maxHeight;
-
-        // Reducir dimensiones más agresivamente en móvil
-        const ratio = Math.min(maxWidth / width, maxHeight / height);
-        if (ratio < 1) {
-          width *= ratio;
-          height *= ratio;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // Dibujar imagen con mejor calidad
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Comprimir con diferentes calidades hasta lograr el tamaño objetivo
-        let quality = mobileConfig.quality;
-
-        const tryCompress = (q) => {
-          canvas.toBlob(
-            (blob) => {
-              if (blob && (blob.size <= maxSize || q <= 0.3)) {
-                const compressedFile = new File([blob], file.name, {
-                  type: "image/jpeg",
-                  lastModified: Date.now(),
-                });
-                resolve(compressedFile);
-              } else if (q > 0.3) {
-                // Reducir calidad y intentar de nuevo
-                tryCompress(q - 0.1);
-              } else {
-                // Si no se puede comprimir más, devolver archivo original
-                resolve(file);
-              }
-            },
-            "image/jpeg",
-            q
-          );
-        };
-
-        tryCompress(quality);
-      };
-
-      img.onerror = () => resolve(file);
-      img.src = URL.createObjectURL(file);
-    });
-  }
-
-  // 4. Validación mejorada de archivos para móvil
-  async function handleImageSelectMobile(imageNumber, file) {
-    const maxSize = mobileConfig.maxFileSize;
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith("image/")) {
-      showToast("Por favor selecciona un archivo de imagen válido.", "error");
-      return;
-    }
-
-    // Validar tamaño inicial
-    if (file.size > 10 * 1024 * 1024) {
-      // 10MB límite absoluto
-      showToast("La imagen es demasiado grande. Máximo 10MB.", "error");
-      return;
-    }
-
-    // Mostrar progreso para archivos grandes en móvil
-    if (file.size > 1024 * 1024 && isMobileDevice()) {
-      showToast("Procesando imagen...", "info");
-    }
-
-    try {
-      // Comprimir imagen
-      const compressedFile = await compressImageForMobile(file, maxSize);
-
-      // Actualizar el input con el archivo comprimido
-      const input = document.getElementById(`imagen_${imageNumber}`);
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(compressedFile);
-      input.files = dataTransfer.files;
-
-      // Mostrar preview
-      showImagePreview(imageNumber, compressedFile);
-
-      if (compressedFile.size < file.size) {
-        showToast(
-          `Imagen optimizada: ${(file.size / 1024 / 1024).toFixed(1)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(1)}MB`,
-          "success"
-        );
-      }
-    } catch (error) {
-      console.error("Error al procesar imagen:", error);
-      showToast("Error al procesar la imagen. Intenta con otra.", "error");
-    }
-  }
-
-  // 5. Función para mostrar preview
-  function showImagePreview(imageNumber, file) {
-    const uploadArea = document.getElementById(`upload-area-${imageNumber}`);
-    const preview = document.getElementById(`preview-${imageNumber}`);
-    const img = preview?.querySelector("img");
-
-    if (img) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result;
-        uploadArea?.classList.add("hidden");
-        preview?.classList.remove("hidden");
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  // 6. Envío mejorado para móviles con chunks
-  async function submitFormMobile(formData) {
+  // Form submission mejorado
+  async function submitFormData(formData) {
     const controller = new AbortController();
     const timeoutId = setTimeout(
       () => controller.abort(),
@@ -907,7 +678,6 @@ import Layout from "../layouts/Layout.astro";
     );
 
     try {
-      // Verificar conexión antes de enviar
       if (!navigator.onLine) {
         throw new Error("Sin conexión a internet");
       }
@@ -935,22 +705,12 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 
-  // 7. Monitoreo de conectividad
-  function setupConnectivityMonitoring() {
-    window.addEventListener("online", () => {
-      showToast("Conexión restaurada", "success");
-    });
-
-    window.addEventListener("offline", () => {
-      showToast("Sin conexión a internet", "error");
-    });
-  }
-
-  // 8. Mejorar el manejo de errores en el form submit
-  function setupMobileFormSubmit() {
+  // Form validation and submission
+  function setupFormSubmission() {
     const form = document.getElementById("room-form");
+    if (!form) return;
 
-    form?.addEventListener("submit", async (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       // Verificar conectividad
@@ -959,14 +719,52 @@ import Layout from "../layouts/Layout.astro";
         return;
       }
 
-      // Validaciones existentes...
+      // Validate required fields
+      let hasErrors = false;
 
+      // Validate name
+      const nameInput = document.getElementById("name");
+      const nameError = document.getElementById("name-error");
+      if (!nameInput?.value.trim()) {
+        nameError?.classList.remove("hidden");
+        hasErrors = true;
+      } else {
+        nameError?.classList.add("hidden");
+      }
+
+      // Validate description
+      const descripcionInput = document.getElementById("descripcion");
+      const descripcionError = document.getElementById("descripcion-error");
+      if (!descripcionInput?.value.trim()) {
+        descripcionError?.classList.remove("hidden");
+        hasErrors = true;
+      } else {
+        descripcionError?.classList.add("hidden");
+      }
+
+      // Validate price
+      const precioInput = document.getElementById("precio");
+      const precioError = document.getElementById("precio-error");
+      if (!precioInput?.value || parseFloat(precioInput.value) <= 0) {
+        precioError?.classList.remove("hidden");
+        hasErrors = true;
+      } else {
+        precioError?.classList.add("hidden");
+      }
+
+      if (hasErrors) {
+        showToast("Por favor corrige los errores antes de continuar.", "error");
+        return;
+      }
+
+      // Show loading state
       const submitBtn = document.getElementById("submit-btn");
       const btnText = document.getElementById("btn-text");
       const loadingSpinner = document.getElementById("loading-spinner");
 
-      submitBtn.disabled = true;
-      btnText.textContent = isMobileDevice() ? "Subiendo..." : "Agregando...";
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText)
+        btnText.textContent = isMobileDevice() ? "Subiendo..." : "Agregando...";
       loadingSpinner?.classList.remove("hidden");
 
       try {
@@ -975,8 +773,6 @@ import Layout from "../layouts/Layout.astro";
         // Log para debug en móvil
         if (isMobileDevice()) {
           console.log("Enviando desde dispositivo móvil");
-
-          // Verificar tamaños de archivos
           for (let [key, value] of formData.entries()) {
             if (value instanceof File && value.size > 0) {
               console.log(`${key}: ${(value.size / 1024 / 1024).toFixed(2)}MB`);
@@ -984,7 +780,7 @@ import Layout from "../layouts/Layout.astro";
           }
         }
 
-        const result = await submitFormMobile(formData);
+        const result = await submitFormData(formData);
 
         if (result.success) {
           showToast("¡Cuarto agregado exitosamente!", "success");
@@ -1014,49 +810,58 @@ import Layout from "../layouts/Layout.astro";
 
         showToast(errorMessage, "error");
       } finally {
-        submitBtn.disabled = false;
-        btnText.textContent = "Agregar Cuarto";
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnText) btnText.textContent = "Agregar Cuarto";
         loadingSpinner?.classList.add("hidden");
       }
     });
   }
 
-  // 9. Inicialización mejorada
-  function initializeMobileOptimizations() {
-    // Solo aplicar optimizaciones móviles si es necesario
+  // Connectivity monitoring
+  function setupConnectivityMonitoring() {
+    window.addEventListener("online", () => {
+      showToast("Conexión restaurada", "success");
+    });
+
+    window.addEventListener("offline", () => {
+      showToast("Sin conexión a internet", "error");
+    });
+  }
+
+  // Initialize everything
+  function initializeForm() {
+    if (eventsInitialized) return;
+    eventsInitialized = true;
+
+    console.log(
+      isMobileDevice()
+        ? "Inicializando con optimizaciones móviles"
+        : "Inicializando versión desktop"
+    );
+
+    // Setup image uploads
+    [1, 2, 3].forEach((num) => setupImageUpload(num));
+
+    // Setup description counter
+    setupDescriptionCounter();
+
+    // Setup form submission
+    setupFormSubmission();
+
+    // Setup connectivity monitoring if mobile
     if (isMobileDevice()) {
-      console.log("Aplicando optimizaciones móviles");
-
-      // Reemplazar la función de manejo de imágenes
-      [1, 2, 3].forEach((num) => {
-        const input = document.getElementById(`imagen_${num}`);
-        const uploadArea = document.getElementById(`upload-area-${num}`);
-
-        // Remover listeners anteriores y agregar nuevos
-        const newInput = input.cloneNode(true);
-        input.parentNode.replaceChild(newInput, input);
-
-        newInput.addEventListener("change", (e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            handleImageSelectMobile(num, file);
-          }
-        });
-
-        uploadArea?.addEventListener("click", () => newInput.click());
-      });
-
-      // Configurar monitoreo de conectividad
       setupConnectivityMonitoring();
-
-      // Configurar el form submit mejorado
-      setupMobileFormSubmit();
-
-      // Mostrar mensaje informativo
       showToast("Optimizaciones móviles activadas", "info");
     }
   }
 
-  // Inicializar cuando el DOM esté listo
-  document.addEventListener("DOMContentLoaded", initializeMobileOptimizations);
+  // Make removeImage function global
+  window.removeImage = removeImage;
+
+  // Initialize when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeForm);
+  } else {
+    initializeForm();
+  }
 </script>
