@@ -1,6 +1,32 @@
 ---
 import { items } from "../logic/itemNav.js";
 import BotonMovil from "./BotonMovil.astro";
+import { createClient } from "../lib/supabase";
+
+// Obtener el usuario autenticado usando el mismo método que el middleware
+const supabase = createClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// Filtrar items basándose en el estado de autenticación
+const filteredItems = items.filter((item) => {
+  return !item.requiresAuth || (item.requiresAuth && user);
+});
+
+// Debug: mostrar información de autenticación
+console.log("=== NAV DEBUG ===");
+console.log("Usuario autenticado:", !!user);
+console.log("User ID:", user?.id || "N/A");
+console.log(
+  "Items filtrados:",
+  filteredItems.map((item) => item.label)
+);
+console.log("=== FIN DEBUG ===");
 ---
 
 <section class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
@@ -17,7 +43,7 @@ import BotonMovil from "./BotonMovil.astro";
       <!-- Desktop Navigation -->
       <nav class="hidden md:flex items-center space-x-6">
         {
-          items.map((item) =>
+          filteredItems.map((item) =>
             item.isButton ? (
               <a
                 href={item.href}
@@ -53,7 +79,7 @@ import BotonMovil from "./BotonMovil.astro";
     >
       <div class="flex flex-col space-y-3">
         {
-          items.map((item) =>
+          filteredItems.map((item) =>
             item.isButton ? (
               <a
                 href={item.href}
