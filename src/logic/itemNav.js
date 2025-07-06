@@ -14,27 +14,27 @@ export const items = [
     label: "Inicio",
     href: "/",
     isButton: false,
-    requiresAuth: false
+    requiresAuth: false,
   },
   {
     label: "Buscar",
     href: "/buscar",
     isButton: false,
-    requiresAuth: false
+    requiresAuth: false,
   },
   {
-    label: "Sobre Nosotros", 
-    href: "/about",
+    label: "Entrar",
+    href: "/registrar",
     isButton: false,
-    requiresAuth: false
+    requiresAuth: false,
   },
   {
     label: "Agregar Cuarto",
-    href: "/agregar-cuarto", 
+    href: "/agregar-cuarto",
     isButton: true,
-    requiresAuth: true  // ESTO DEBE SER true
-  }
+    requiresAuth: true, // ESTO DEBE SER true
+  },
 ];
 
 // Debug: verificar configuración
-console.log('Items configuration:', items);
+console.log("Items configuration:", items);
