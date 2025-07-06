@@ -47,6 +47,56 @@ const cuartosProcesados =
     <div class="container mx-auto px-4 py-8">
       <h1 class="text-3xl font-bold text-center mb-8">Cuartos Disponibles</h1>
 
+      <!-- Filtro de Precios -->
+      <div
+        class="max-w-md mx-auto mb-8 p-6 bg-white rounded-lg shadow-sm border"
+      >
+        <h2 class="text-lg font-semibold mb-4 text-gray-800">
+          Filtrar por Precio
+        </h2>
+
+        <div class="space-y-4">
+          <div class="flex items-center space-x-4">
+            <label class="text-sm font-medium text-gray-700 w-16">Desde:</label>
+            <input
+              type="number"
+              id="precio-min"
+              min="0"
+              step="1000"
+              placeholder="0"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <label class="text-sm font-medium text-gray-700 w-16">Hasta:</label>
+            <input
+              type="number"
+              id="precio-max"
+              min="0"
+              step="1000"
+              placeholder="Sin límite"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div class="flex space-x-2">
+            <button
+              id="filtrar-btn"
+              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-200 font-medium"
+            >
+              Filtrar
+            </button>
+            <button
+              id="limpiar-btn"
+              class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200 font-medium"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
       {
         error && (
           <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -82,10 +132,13 @@ const cuartosProcesados =
         )
       }
 
-      <div class="grid grid-cols-1 gap-6">
+      <div id="cuartos-container" class="grid grid-cols-1 gap-6">
         {
           cuartosProcesados?.map((cuarto) => (
-            <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-white">
+            <div
+              class="cuarto-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-white"
+              data-precio={cuarto.precio}
+            >
               <div class="relative">
                 <img
                   src={cuarto.imagen_1 || "/Images/default.jpeg"}
@@ -128,15 +181,6 @@ const cuartosProcesados =
           ))
         }
       </div>
-
-      <div class="text-center mt-8">
-        <a
-          href="/agregar-cuarto"
-          class="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
-        >
-          + Agregar Nuevo Cuarto
-        </a>
-      </div>
     </div>
 
     <style>
@@ -155,5 +199,139 @@ const cuartosProcesados =
         overflow: hidden;
       }
     </style>
+
+    <script is:inline>
+      // Filtrado de cuartos por precio
+      document.addEventListener("DOMContentLoaded", function () {
+        function filtrarCuartos() {
+          const precioMin =
+            parseInt(document.getElementById("precio-min").value) || 0;
+          const precioMax =
+            parseInt(document.getElementById("precio-max").value) || Infinity;
+
+          const cuartoCards = document.querySelectorAll(".cuarto-card");
+          let cuartosMostrados = 0;
+
+          cuartoCards.forEach(function (card) {
+            const precio = parseInt(card.getAttribute("data-precio"));
+
+            if (precio >= precioMin && precio <= precioMax) {
+              card.style.display = "block";
+              cuartosMostrados++;
+            } else {
+              card.style.display = "none";
+            }
+          });
+
+          mostrarMensajeResultados(
+            cuartosMostrados,
+            precioMin,
+            precioMax,
+            cuartoCards.length
+          );
+        }
+
+        function limpiarFiltros() {
+          document.getElementById("precio-min").value = "";
+          document.getElementById("precio-max").value = "";
+
+          const cuartoCards = document.querySelectorAll(".cuarto-card");
+          cuartoCards.forEach(function (card) {
+            card.style.display = "block";
+          });
+
+          const mensajeExistente =
+            document.getElementById("mensaje-resultados");
+          if (mensajeExistente) {
+            mensajeExistente.remove();
+          }
+        }
+
+        function mostrarMensajeResultados(cantidad, min, max, total) {
+          const cuartosContainer = document.getElementById("cuartos-container");
+          const mensajeExistente =
+            document.getElementById("mensaje-resultados");
+
+          if (mensajeExistente) {
+            mensajeExistente.remove();
+          }
+
+          if (cantidad === 0) {
+            const mensaje = document.createElement("div");
+            mensaje.id = "mensaje-resultados";
+            mensaje.className = "text-center py-8 px-4";
+            mensaje.innerHTML =
+              '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">' +
+              '<h3 class="text-lg font-medium text-yellow-800 mb-2">No se encontraron cuartos</h3>' +
+              '<p class="text-yellow-600">' +
+              "No hay cuartos disponibles en el rango de precios de " +
+              "<strong>$" +
+              min.toLocaleString() +
+              "</strong> " +
+              (max === Infinity
+                ? "en adelante"
+                : "a <strong>$" + max.toLocaleString() + "</strong>") +
+              "." +
+              "</p>" +
+              '<button onclick="limpiarFiltros()" class="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md transition-colors duration-200">' +
+              "Ver todos los cuartos" +
+              "</button>" +
+              "</div>";
+            cuartosContainer.appendChild(mensaje);
+          } else if (cantidad < total) {
+            const mensaje = document.createElement("div");
+            mensaje.id = "mensaje-resultados";
+            mensaje.className = "text-center py-4 px-4";
+            mensaje.innerHTML =
+              '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">' +
+              '<p class="text-blue-700">' +
+              "Mostrando <strong>" +
+              cantidad +
+              "</strong> de <strong>" +
+              total +
+              "</strong> cuartos disponibles " +
+              "en el rango de <strong>$" +
+              min.toLocaleString() +
+              "</strong> " +
+              (max === Infinity
+                ? "en adelante"
+                : "a <strong>$" + max.toLocaleString() + "</strong>") +
+              "." +
+              "</p>" +
+              "</div>";
+            if (cuartosContainer.firstChild) {
+              cuartosContainer.insertBefore(
+                mensaje,
+                cuartosContainer.firstChild
+              );
+            }
+          }
+        }
+
+        // Hacer funciones globales para onclick
+        window.limpiarFiltros = limpiarFiltros;
+        window.filtrarCuartos = filtrarCuartos;
+
+        // Event listeners
+        document
+          .getElementById("filtrar-btn")
+          .addEventListener("click", filtrarCuartos);
+        document
+          .getElementById("limpiar-btn")
+          .addEventListener("click", limpiarFiltros);
+
+        document
+          .getElementById("precio-min")
+          .addEventListener("keypress", function (e) {
+            if (e.key === "Enter") filtrarCuartos();
+          });
+
+        document
+          .getElementById("precio-max")
+          .addEventListener("keypress", function (e) {
+            if (e.key === "Enter") filtrarCuartos();
+          });
+      });
+    </script>
   </body>
 </html>
