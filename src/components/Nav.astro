@@ -15,13 +15,30 @@ const {
 
 // Filtrar items basándose en el estado de autenticación
 const filteredItems = items.filter((item) => {
-  return !item.requiresAuth || (item.requiresAuth && user);
+  // Si requiere autenticación y no hay usuario, no mostrar
+  if (item.requiresAuth && !user) {
+    return false;
+  }
+  // Si debe ocultarse cuando hay autenticación y hay usuario, no mostrar
+  if (item.hideWhenAuth && user) {
+    return false;
+  }
+  return true;
 });
 
 // Debug: mostrar información de autenticación
 console.log("=== NAV DEBUG ===");
 console.log("Usuario autenticado:", !!user);
 console.log("User ID:", user?.id || "N/A");
+console.log("Email:", user?.email || "N/A");
+console.log(
+  "Items antes del filtro:",
+  items.map((item) => ({
+    label: item.label,
+    requiresAuth: item.requiresAuth,
+    hideWhenAuth: item.hideWhenAuth,
+  }))
+);
 console.log(
   "Items filtrados:",
   filteredItems.map((item) => item.label)
