@@ -27,6 +27,13 @@ export const items = [
     href: "/registrar",
     isButton: false,
     requiresAuth: false,
+    hideWhenAuth: true, // Nueva propiedad: ocultar cuando esté autenticado
+  },
+  {
+    label: "Mis Cuartos",
+    href: "/mis-cuartos",
+    isButton: false,
+    requiresAuth: true, // Solo mostrar cuando esté autenticado
   },
   {
     label: "Agregar Cuarto",
