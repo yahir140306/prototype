@@ -1,0 +1,353 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { createClient } from "../../lib/supabase";
+import { decodeHexUrl } from "../../utils/urlDecoder.js";
+
+const supabase = createClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+// Verificar autenticación
+const {
+  data: { user },
+  error: authError,
+} = await supabase.auth.getUser();
+
+if (authError || !user) {
+  return Astro.redirect("/registrar");
+}
+
+// Obtener el ID del cuarto desde los parámetros
+const cuartoId = Astro.params.id;
+
+// Obtener datos del cuarto
+const { data: cuarto, error } = await supabase
+  .from("cuartos")
+  .select("*")
+  .eq("id", cuartoId)
+  .eq("user_id", user.id)
+  .single();
+
+if (error || !cuarto) {
+  return Astro.redirect("/mis-cuartos");
+}
+
+console.log("=== EDITAR CUARTO DEBUG ===");
+console.log("Usuario:", user.id);
+console.log("Cuarto ID:", cuartoId);
+console.log("Cuarto encontrado:", !!cuarto);
+console.log("==========================");
+---
+
+<Layout>
+  <div
+    class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 py-8 px-4 sm:px-6 lg:px-8"
+  >
+    <div class="max-w-2xl mx-auto">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div
+          class="mx-auto h-12 w-12 sm:h-16 sm:w-16 bg-yellow-600 rounded-full flex items-center justify-center mb-4"
+        >
+          <svg
+            class="h-6 w-6 sm:h-8 sm:w-8 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
+          </svg>
+        </div>
+        <h2
+          class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2"
+        >
+          Editar Cuarto
+        </h2>
+        <p class="text-sm sm:text-base text-gray-600">
+          Actualiza la información de tu cuarto
+        </p>
+      </div>
+
+      <!-- Botón Volver -->
+      <div class="mb-6">
+        <a
+          href="/mis-cuartos"
+          class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+        >
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Volver a Mis Cuartos
+        </a>
+      </div>
+
+      <!-- Form Card -->
+      <div
+        class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8"
+      >
+        <form
+          action={`/api/cuartos/${cuarto.id}`}
+          method="POST"
+          enctype="multipart/form-data"
+          id="edit-room-form"
+          class="space-y-6"
+        >
+          <input type="hidden" name="_method" value="PUT" />
+
+          <!-- Nombre del Cuarto -->
+          <div>
+            <label
+              for="name"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Nombre del Cuarto *
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={cuarto.name}
+              required
+              maxlength="100"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Ej: Cuarto amplio con vista al jardín"
+            />
+          </div>
+
+          <!-- Descripción -->
+          <div>
+            <label
+              for="descripcion"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Descripción *
+            </label>
+            <textarea
+              id="descripcion"
+              name="descripcion"
+              required
+              maxlength="500"
+              rows="4"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-500 resize-none"
+              placeholder="Describe las características del cuarto, servicios incluidos, ubicación, etc."
+              >{cuarto.descripcion}</textarea
+            >
+            <p class="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
+          </div>
+
+          <!-- Precio -->
+          <div>
+            <label
+              for="precio"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Precio Mensual (COP) *
+            </label>
+            <div class="relative">
+              <span
+                class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium"
+                >$</span
+              >
+              <input
+                type="number"
+                id="precio"
+                name="precio"
+                value={cuarto.precio}
+                required
+                min="50000"
+                max="10000000"
+                step="10000"
+                class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-gray-900"
+                placeholder="500000"
+              />
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Precio entre $50,000 y $10,000,000
+            </p>
+          </div>
+
+          <!-- Imágenes Actuales -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-4">
+              Imágenes Actuales
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              {
+                cuarto.imagen_1 && (
+                  <div class="relative">
+                    <img
+                      src={decodeHexUrl(cuarto.imagen_1)}
+                      alt="Imagen 1"
+                      class="w-full h-24 object-cover rounded-lg border"
+                      onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
+                    />
+                    <div class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                      Principal
+                    </div>
+                  </div>
+                )
+              }
+              {
+                cuarto.imagen_2 && (
+                  <div class="relative">
+                    <img
+                      src={decodeHexUrl(cuarto.imagen_2)}
+                      alt="Imagen 2"
+                      class="w-full h-24 object-cover rounded-lg border"
+                      onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
+                    />
+                  </div>
+                )
+              }
+              {
+                cuarto.imagen_3 && (
+                  <div class="relative">
+                    <img
+                      src={decodeHexUrl(cuarto.imagen_3)}
+                      alt="Imagen 3"
+                      class="w-full h-24 object-cover rounded-lg border"
+                      onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
+                    />
+                  </div>
+                )
+              }
+            </div>
+          </div>
+
+          <!-- Nuevas Imágenes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-4">
+              Actualizar Imágenes (Opcional)
+            </label>
+
+            <!-- Imagen Principal -->
+            <div class="mb-4">
+              <label
+                for="imagen_1"
+                class="block text-sm font-medium text-gray-600 mb-2"
+              >
+                Imagen Principal
+              </label>
+              <input
+                type="file"
+                id="imagen_1"
+                name="imagen_1"
+                accept="image/*"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+            </div>
+
+            <!-- Imagen 2 -->
+            <div class="mb-4">
+              <label
+                for="imagen_2"
+                class="block text-sm font-medium text-gray-600 mb-2"
+              >
+                Imagen 2
+              </label>
+              <input
+                type="file"
+                id="imagen_2"
+                name="imagen_2"
+                accept="image/*"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+            </div>
+
+            <!-- Imagen 3 -->
+            <div class="mb-4">
+              <label
+                for="imagen_3"
+                class="block text-sm font-medium text-gray-600 mb-2"
+              >
+                Imagen 3
+              </label>
+              <input
+                type="file"
+                id="imagen_3"
+                name="imagen_3"
+                accept="image/*"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+            </div>
+
+            <p class="text-xs text-gray-500">
+              Solo sube imágenes si quieres cambiar las actuales. Formatos
+              permitidos: JPG, PNG, WebP. Tamaño máximo: 5MB por imagen.
+            </p>
+          </div>
+
+          <!-- Botones -->
+          <div class="flex flex-col sm:flex-row gap-4 pt-6">
+            <button
+              type="submit"
+              class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+            >
+              Actualizar Cuarto
+            </button>
+            <a
+              href="/mis-cuartos"
+              class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md text-center"
+            >
+              Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document
+      .getElementById("edit-room-form")
+      .addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+
+        // Mostrar estado de carga
+        submitButton.disabled = true;
+        submitButton.textContent = "Actualizando...";
+
+        try {
+          const formData = new FormData(e.target);
+
+          const response = await fetch(e.target.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert("Cuarto actualizado exitosamente");
+            window.location.href = "/mis-cuartos";
+          } else {
+            alert("Error: " + result.error);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error actualizando el cuarto");
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }
+      });
+  </script>
+</Layout>
