@@ -1,0 +1,231 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { createClient } from "../lib/supabase";
+
+const supabase = createClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+// Verificar autenticación
+const {
+  data: { user },
+  error: authError,
+} = await supabase.auth.getUser();
+
+// Obtener TODOS los cuartos para debug
+const { data: todosLosCuartos, error: errorTodos } = await supabase
+  .from("cuartos")
+  .select("*")
+  .order("created_at", { ascending: false });
+
+// Obtener cuartos del usuario si está autenticado
+let misCuartos = null;
+let errorMisCuartos = null;
+if (user) {
+  const { data, error } = await supabase
+    .from("cuartos")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+  misCuartos = data;
+  errorMisCuartos = error;
+}
+
+console.log("=== DEBUG COMPLETO ===");
+console.log("Usuario autenticado:", !!user);
+console.log("User ID:", user?.id || "N/A");
+console.log("Total cuartos en DB:", todosLosCuartos?.length || 0);
+console.log("Cuartos del usuario:", misCuartos?.length || 0);
+console.log("Error auth:", authError);
+console.log("Error todos:", errorTodos);
+console.log("Error mis cuartos:", errorMisCuartos);
+if (todosLosCuartos && todosLosCuartos.length > 0) {
+  console.log("Estructura primer cuarto:", Object.keys(todosLosCuartos[0]));
+  console.log(
+    "User IDs en DB:",
+    todosLosCuartos.map((c) => c.user_id)
+  );
+}
+console.log("====================");
+---
+
+<Layout>
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">Debug de Cuartos</h1>
+
+      <!-- Información del Usuario -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">Información del Usuario</h2>
+        {
+          user ? (
+            <div>
+              <p>
+                <strong>Autenticado:</strong> ✅ Sí
+              </p>
+              <p>
+                <strong>ID:</strong> {user.id}
+              </p>
+              <p>
+                <strong>Email:</strong> {user.email}
+              </p>
+            </div>
+          ) : (
+            <p>
+              <strong>Autenticado:</strong> ❌ No
+            </p>
+          )
+        }
+      </div>
+
+      <!-- Estadísticas -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">Estadísticas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p class="text-2xl font-bold text-blue-600">
+              {todosLosCuartos?.length || 0}
+            </p>
+            <p class="text-gray-600">Total cuartos en DB</p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-green-600">
+              {misCuartos?.length || 0}
+            </p>
+            <p class="text-gray-600">Mis cuartos</p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-orange-600">
+              {
+                todosLosCuartos
+                  ? todosLosCuartos.filter((c) => !c.user_id).length
+                  : 0
+              }
+            </p>
+            <p class="text-gray-600">Sin user_id</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Todos los Cuartos -->
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">Todos los Cuartos en la DB</h2>
+        {
+          todosLosCuartos && todosLosCuartos.length > 0 ? (
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nombre
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User ID
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  {todosLosCuartos.map((cuarto) => (
+                    <tr
+                      class={cuarto.user_id === user?.id ? "bg-green-50" : ""}
+                    >
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {cuarto.id}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {cuarto.name}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span
+                          class={
+                            cuarto.user_id ? "text-green-600" : "text-red-600"
+                          }
+                        >
+                          {cuarto.user_id || "Sin user_id"}
+                        </span>
+                        {cuarto.user_id === user?.id && (
+                          <span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                            MÍO
+                          </span>
+                        )}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${cuarto.precio?.toLocaleString()}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(cuarto.created_at).toLocaleString("es-ES")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p class="text-gray-500">No hay cuartos en la base de datos</p>
+          )
+        }
+      </div>
+
+      <!-- Mis Cuartos -->
+      {
+        user && (
+          <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Mis Cuartos (Filtrados)</h2>
+            {misCuartos && misCuartos.length > 0 ? (
+              <div class="space-y-4">
+                {misCuartos.map((cuarto) => (
+                  <div class="border rounded-lg p-4">
+                    <h3 class="font-semibold">{cuarto.name}</h3>
+                    <p class="text-gray-600">{cuarto.descripcion}</p>
+                    <p class="text-blue-600 font-bold">
+                      ${cuarto.precio?.toLocaleString()}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                      ID: {cuarto.id} | User ID: {cuarto.user_id}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p class="text-gray-500">
+                No tienes cuartos asociados a tu cuenta
+              </p>
+            )}
+          </div>
+        )
+      }
+
+      <!-- Acciones -->
+      <div class="mt-8 flex space-x-4">
+        <a
+          href="/mis-cuartos"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+        >
+          Ir a Mis Cuartos
+        </a>
+        <a
+          href="/agregar-cuarto"
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
+        >
+          Agregar Cuarto
+        </a>
+        <a
+          href="/"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
+        >
+          Inicio
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,332 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { createClient } from "../lib/supabase";
+import { decodeHexUrl } from "../utils/urlDecoder.js";
+
+const supabase = createClient({
+  request: Astro.request,
+  cookies: Astro.cookies,
+});
+
+// Verificar autenticación
+const {
+  data: { user },
+  error: authError,
+} = await supabase.auth.getUser();
+
+if (authError || !user) {
+  return Astro.redirect("/registrar");
+}
+
+// Obtener cuartos del usuario
+const { data: cuartos, error } = await supabase
+  .from("cuartos")
+  .select("*")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
+
+const cuartosProcesados =
+  cuartos?.map((cuarto) => ({
+    ...cuarto,
+    imagen_1: decodeHexUrl(cuarto.imagen_1),
+  })) || [];
+
+console.log("=== MIS CUARTOS DEBUG ===");
+console.log("Usuario:", user.id);
+console.log("Email:", user.email);
+console.log("Error de auth:", authError);
+console.log("Cuartos encontrados:", cuartos?.length || 0);
+console.log("Error consulta cuartos:", error);
+if (cuartos && cuartos.length > 0) {
+  console.log("Primer cuarto:", cuartos[0]);
+}
+console.log("========================");
+---
+
+<Layout>
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Mis Cuartos</h1>
+            <p class="mt-2 text-gray-600">
+              Gestiona los cuartos que has publicado
+            </p>
+          </div>
+          <a
+            href="/agregar-cuarto"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            + Agregar Cuarto
+          </a>
+        </div>
+      </div>
+
+      <!-- Estadísticas -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">
+                  Total de Cuartos
+                </dt>
+                <dd class="text-lg font-medium text-gray-900">
+                  {cuartosProcesados.length}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">
+                  Activos
+                </dt>
+                <dd class="text-lg font-medium text-gray-900">
+                  {cuartosProcesados.length}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg p-6 shadow-sm border">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div
+                class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-4 h-4 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"
+                  ></path>
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
+                    clip-rule="evenodd"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">
+                  Precio Promedio
+                </dt>
+                <dd class="text-lg font-medium text-gray-900">
+                  {
+                    cuartosProcesados.length > 0
+                      ? `$${Math.round(cuartosProcesados.reduce((sum, c) => sum + c.precio, 0) / cuartosProcesados.length).toLocaleString()}`
+                      : "$0"
+                  }
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Cuartos -->
+      {
+        error && (
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Error:</strong> {error.message || "Error desconocido"}
+          </div>
+        )
+      }
+
+      {
+        !error && cuartosProcesados.length === 0 && (
+          <div class="text-center py-12">
+            <div class="mx-auto h-12 w-12 text-gray-400">
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            </div>
+            <h3 class="mt-2 text-lg font-medium text-gray-900">
+              No tienes cuartos publicados
+            </h3>
+            <p class="mt-1 text-gray-500">
+              ¡Empieza agregando tu primer cuarto!
+            </p>
+            <div class="mt-6">
+              <a
+                href="/agregar-cuarto"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg
+                  class="-ml-1 mr-2 h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                Agregar Cuarto
+              </a>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        !error && cuartosProcesados.length > 0 && (
+          <div class="grid grid-cols-1 gap-6">
+            {cuartosProcesados.map((cuarto) => (
+              <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="p-6">
+                  <div class="flex items-start justify-between">
+                    <div class="flex">
+                      <div class="flex-shrink-0">
+                        <img
+                          src={cuarto.imagen_1 || "/Images/default.jpeg"}
+                          alt={cuarto.name}
+                          class="h-20 w-20 rounded-lg object-cover"
+                          loading="lazy"
+                          onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
+                        />
+                      </div>
+                      <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-medium text-gray-900">
+                          {cuarto.name}
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {cuarto.descripcion}
+                        </p>
+                        <div class="mt-2 flex items-center text-sm text-gray-500">
+                          <span class="text-lg font-bold text-blue-600">
+                            ${cuarto.precio.toLocaleString()}
+                          </span>
+                          <span class="ml-1">por mes</span>
+                          <span class="mx-2">•</span>
+                          <span>
+                            Creado el{" "}
+                            {new Date(cuarto.created_at).toLocaleDateString(
+                              "es-ES"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <a
+                        href={`/cuarto/${cuarto.id}`}
+                        class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Ver
+                      </a>
+                      <a
+                        href={`/editar-cuarto/${cuarto.id}`}
+                        class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                      >
+                        Editar
+                      </a>
+                      <button
+                        onclick={`eliminarCuarto('${cuarto.id}', '${cuarto.name}')`}
+                        class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+
+  <script is:inline>
+    async function eliminarCuarto(cuartoId, nombreCuarto) {
+      if (
+        !confirm(
+          `¿Estás seguro de que quieres eliminar "${nombreCuarto}"? Esta acción no se puede deshacer.`
+        )
+      ) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/cuartos/${cuartoId}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("Cuarto eliminado exitosamente");
+          window.location.reload();
+        } else {
+          alert("Error eliminando cuarto: " + result.error);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error eliminando cuarto");
+      }
+    }
+  </script>
+</Layout>
