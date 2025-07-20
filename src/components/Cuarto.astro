@@ -9,17 +9,18 @@ const supabase = createClient({
 
 const { data: cuartos, error } = await supabase.from("cuartos").select("*");
 
+const cuartosProcesados =
+  cuartos?.map((cuarto) => ({
+    ...cuarto,
+    imagen_1: decodeHexUrl(cuarto.imagen_1),
+  })) || [];
+
 // console.log("=== DEBUG CONSULTA SUPABASE ===");
 // console.log("Error:", error);
 // console.log("Cuartos obtenidos:", cuartos);
 // console.log("================================");
 
 // Procesar las URLs de los cuartos solo si hay datos
-const cuartosProcesados =
-  cuartos?.map((cuarto) => ({
-    ...cuarto,
-    imagen_1: decodeHexUrl(cuarto.imagen_1),
-  })) || [];
 
 // console.log("=== DEBUG CUARTOS PROCESADOS ===");
 // if (cuartos && cuartos.length > 0) {
