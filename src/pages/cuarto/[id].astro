@@ -36,6 +36,10 @@ if (imagenes.length === 0) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>{cuarto.name}</title>
       <script src="https://cdn.tailwindcss.com"></script>
+      <!-- HTML2Canvas para generar imágenes -->
+      <script
+        src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+      ></script>
       <style>
         /* Oculta scrollbar horizontal */
         .no-scrollbar::-webkit-scrollbar {
@@ -44,6 +48,31 @@ if (imagenes.length === 0) {
         .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+
+        /* Estilos para la tarjeta de descarga */
+        .download-card {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-family:
+            "Inter",
+            -apple-system,
+            BlinkMacSystemFont,
+            sans-serif;
+        }
+
+        .download-hidden {
+          position: absolute;
+          top: -9999px;
+          left: -9999px;
+          width: 800px;
+          height: 600px;
+        }
+
+        .line-clamp-4 {
+          display: -webkit-box;
+          -webkit-line-clamp: 4;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       </style>
     </head>
@@ -101,17 +130,197 @@ if (imagenes.length === 0) {
           </div>
         </section>
 
-        <!-- Botón de contacto -->
-        <div class="text-center">
+        <!-- Botón de contacto y descarga -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Contactar al Propietario
+          </button>
+          <button
+            id="download-btn"
+            class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-4-4m4 4l4-4m-6 2a8 8 0 100-16 8 8 0 000 16z"
+              ></path>
+            </svg>
+            Descargar Tarjeta
           </button>
         </div>
       </main>
 
-      <!-- Autoplay Script -->
+      <!-- Tarjeta oculta para descarga -->
+      <div id="download-card" class="download-hidden">
+        <div
+          class="download-card w-full h-full text-white p-8 flex flex-col justify-between"
+        >
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div
+                class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center"
+              >
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
+                  ></path>
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-2xl font-bold">RANTU</h1>
+                <p class="text-sm opacity-80">Tu próximo hogar</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl font-bold">
+                ${cuarto.precio.toLocaleString()}
+              </div>
+              <div class="text-sm opacity-80">por mes</div>
+            </div>
+          </div>
+
+          <!-- Contenido principal -->
+          <div class="flex-1 flex items-center justify-between py-8">
+            <!-- Imagen principal -->
+            <div class="w-80 h-60 rounded-xl overflow-hidden shadow-2xl">
+              <img
+                src={imagenes[0]}
+                alt={cuarto.name}
+                class="w-full h-full object-cover"
+                crossorigin="anonymous"
+              />
+            </div>
+
+            <!-- Información -->
+            <div class="flex-1 pl-8">
+              <h2 class="text-4xl font-bold mb-4 leading-tight">
+                {cuarto.name}
+              </h2>
+              <p class="text-lg opacity-90 mb-6 leading-relaxed line-clamp-4">
+                {cuarto.descripcion}
+              </p>
+
+              <!-- Características destacadas -->
+              <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                  <span>Completamente amueblado</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                  <span>Ubicación céntrica</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"></path>
+                  </svg>
+                  <span>Disponible inmediatamente</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="text-sm opacity-80">
+                🏠 Encuentra más opciones en RANTU.com
+              </div>
+            </div>
+            <div class="text-sm opacity-80">
+              Generado el {new Date().toLocaleDateString("es-ES")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scripts para descarga y autoplay -->
+      <script is:inline>
+        // Función para descargar la tarjeta
+        async function descargarTarjeta() {
+          const downloadBtn = document.getElementById("download-btn");
+          const originalText = downloadBtn.innerHTML;
+
+          try {
+            // Cambiar texto del botón
+            downloadBtn.innerHTML = `
+              <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Generando...
+            `;
+            downloadBtn.disabled = true;
+
+            const card = document.getElementById("download-card");
+
+            // Configuración para html2canvas
+            const canvas = await html2canvas(card, {
+              width: 800,
+              height: 600,
+              scale: 2, // Mayor resolución
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: null,
+              logging: false,
+              onclone: function (clonedDoc) {
+                // Asegurar que las imágenes se carguen en el clon
+                const clonedCard = clonedDoc.getElementById("download-card");
+                clonedCard.style.position = "relative";
+                clonedCard.style.top = "0";
+                clonedCard.style.left = "0";
+              },
+            });
+
+            // Crear el enlace de descarga
+            const link = document.createElement("a");
+            link.download = `cuarto-${encodeURIComponent("${cuarto.name}")}-${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png", 1.0);
+
+            // Simular click para descargar
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Mostrar mensaje de éxito
+            alert("¡Tarjeta descargada exitosamente!");
+          } catch (error) {
+            console.error("Error generando tarjeta:", error);
+            alert("Error al generar la tarjeta. Inténtalo de nuevo.");
+          } finally {
+            // Restaurar botón
+            downloadBtn.innerHTML = originalText;
+            downloadBtn.disabled = false;
+          }
+        }
+
+        // Event listener para el botón de descarga
+        document
+          .getElementById("download-btn")
+          .addEventListener("click", descargarTarjeta);
+      </script>
       <script src="./script.js"></script>
     </body>
   </html>
