@@ -74,25 +74,27 @@ if (imagenes.length === 0) {
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
-        
+
         /* Estilos para el sistema de comentarios */
         .star-btn {
           cursor: pointer;
           user-select: none;
         }
-        
+
         .star-btn:hover,
         .star-btn.active {
-          color: #FCD34D !important;
+          color: #fcd34d !important;
         }
-        
+
         .comment-card {
           transition: all 0.2s ease;
         }
-        
+
         .comment-card:hover {
           transform: translateY(-1px);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
       </style>
     </head>
@@ -155,13 +157,18 @@ if (imagenes.length === 0) {
           <!-- Header de Comentarios -->
           <div class="bg-white p-6 rounded-lg shadow">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl font-bold text-gray-900">Comentarios y Calificaciones</h2>
+              <h2 class="text-2xl font-bold text-gray-900">
+                Comentarios y Calificaciones
+              </h2>
               <div id="rating-summary" class="text-right">
                 <div class="flex items-center justify-end space-x-2">
                   <div class="flex text-yellow-400" id="average-stars">
                     <!-- Las estrellas se llenarán dinámicamente -->
                   </div>
-                  <span id="average-rating" class="text-lg font-semibold text-gray-700">0.0</span>
+                  <span
+                    id="average-rating"
+                    class="text-lg font-semibold text-gray-700">0.0</span
+                  >
                 </div>
                 <p class="text-sm text-gray-500">
                   <span id="total-reviews">0</span> comentarios
@@ -174,30 +181,42 @@ if (imagenes.length === 0) {
               <h3 class="text-lg font-semibold mb-4">Deja tu comentario</h3>
               <form id="comment-form" class="space-y-4">
                 <input type="hidden" name="cuarto_id" value={cuarto.id} />
-                
+
                 <!-- Calificación con estrellas -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">
                     Calificación *
                   </label>
                   <div class="flex items-center space-x-1" id="star-rating">
-                    {[1,2,3,4,5].map(star => (
-                      <button
-                        type="button"
-                        class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors focus:outline-none"
-                        data-rating={star}
-                      >
-                        ★
-                      </button>
-                    ))}
+                    {
+                      [1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          type="button"
+                          class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors focus:outline-none"
+                          data-rating={star}
+                        >
+                          ★
+                        </button>
+                      ))
+                    }
                   </div>
-                  <input type="hidden" name="calificacion" id="rating-input" required />
-                  <p class="text-xs text-gray-500 mt-1">Haz clic en las estrellas para calificar</p>
+                  <input
+                    type="hidden"
+                    name="calificacion"
+                    id="rating-input"
+                    required
+                  />
+                  <p class="text-xs text-gray-500 mt-1">
+                    Haz clic en las estrellas para calificar
+                  </p>
                 </div>
 
                 <!-- Comentario -->
                 <div>
-                  <label for="comentario" class="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    for="comentario"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Comentario *
                   </label>
                   <textarea
@@ -210,7 +229,9 @@ if (imagenes.length === 0) {
                     placeholder="Comparte tu experiencia sobre este cuarto..."
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   ></textarea>
-                  <p class="text-xs text-gray-500 mt-1">Mínimo 10 caracteres, máximo 500</p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Mínimo 10 caracteres, máximo 500
+                  </p>
                 </div>
 
                 <!-- Botón enviar -->
@@ -348,7 +369,7 @@ if (imagenes.length === 0) {
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
               <div class="text-sm opacity-80">
-                🏠 Encuentra más opciones en RANTU.com
+                🏠 Encuentra más opciones en R A N T U
               </div>
             </div>
             <div class="text-sm opacity-80">
@@ -423,13 +444,13 @@ if (imagenes.length === 0) {
           .addEventListener("click", descargarTarjeta);
 
         // === SISTEMA DE COMENTARIOS ===
-        
+
         let selectedRating = 0;
-        const cuartoId = '{cuarto.id}';
+        const cuartoId = "{cuarto.id}";
 
         // Función para renderizar estrellas
-        function renderStars(rating, className = 'text-yellow-400') {
-          let stars = '';
+        function renderStars(rating, className = "text-yellow-400") {
+          let stars = "";
           for (let i = 1; i <= 5; i++) {
             if (i <= rating) {
               stars += `<span class="${className}">★</span>`;
@@ -443,19 +464,19 @@ if (imagenes.length === 0) {
         }
 
         // Manejar clicks en las estrellas
-        document.querySelectorAll('.star-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
+        document.querySelectorAll(".star-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
             selectedRating = parseInt(this.dataset.rating);
-            document.getElementById('rating-input').value = selectedRating;
-            
+            document.getElementById("rating-input").value = selectedRating;
+
             // Actualizar visualización de estrellas
-            document.querySelectorAll('.star-btn').forEach((star, index) => {
+            document.querySelectorAll(".star-btn").forEach((star, index) => {
               if (index < selectedRating) {
-                star.classList.add('active');
-                star.style.color = '#FCD34D';
+                star.classList.add("active");
+                star.style.color = "#FCD34D";
               } else {
-                star.classList.remove('active');
-                star.style.color = '#D1D5DB';
+                star.classList.remove("active");
+                star.style.color = "#D1D5DB";
               }
             });
           });
@@ -464,31 +485,37 @@ if (imagenes.length === 0) {
         // Cargar comentarios al cargar la página
         async function cargarComentarios() {
           try {
-            const response = await fetch(`/api/cuartos/${cuartoId}/comentarios`);
+            const response = await fetch(
+              `/api/cuartos/${cuartoId}/comentarios`
+            );
             const data = await response.json();
-            
+
             if (data.success) {
               mostrarEstadisticas(data.estadisticas);
               mostrarComentarios(data.comentarios);
             } else {
-              console.error('Error cargando comentarios:', data.error);
+              console.error("Error cargando comentarios:", data.error);
             }
           } catch (error) {
-            console.error('Error:', error);
+            console.error("Error:", error);
           }
         }
 
         // Mostrar estadísticas de calificación
         function mostrarEstadisticas(estadisticas) {
-          document.getElementById('average-rating').textContent = estadisticas.promedio.toFixed(1);
-          document.getElementById('total-reviews').textContent = estadisticas.total;
-          document.getElementById('average-stars').innerHTML = renderStars(estadisticas.promedio);
+          document.getElementById("average-rating").textContent =
+            estadisticas.promedio.toFixed(1);
+          document.getElementById("total-reviews").textContent =
+            estadisticas.total;
+          document.getElementById("average-stars").innerHTML = renderStars(
+            estadisticas.promedio
+          );
         }
 
         // Mostrar comentarios
         function mostrarComentarios(comentarios) {
-          const container = document.getElementById('comments-list');
-          
+          const container = document.getElementById("comments-list");
+
           if (comentarios.length === 0) {
             container.innerHTML = `
               <div class="bg-gray-50 rounded-lg p-8 text-center">
@@ -500,23 +527,25 @@ if (imagenes.length === 0) {
             return;
           }
 
-          container.innerHTML = comentarios.map(comentario => `
+          container.innerHTML = comentarios
+            .map(
+              (comentario) => `
             <div class="comment-card bg-white p-6 rounded-lg shadow border">
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                    ${comentario.usuarios?.email ? comentario.usuarios.email.charAt(0).toUpperCase() : 'U'}
+                    ${comentario.usuarios?.email ? comentario.usuarios.email.charAt(0).toUpperCase() : "U"}
                   </div>
                   <div>
                     <h4 class="font-medium text-gray-900">
-                      ${comentario.usuarios?.email ? comentario.usuarios.email.split('@')[0] : 'Usuario'}
+                      ${comentario.usuarios?.email ? comentario.usuarios.email.split("@")[0] : "Usuario"}
                     </h4>
                     <div class="flex items-center space-x-2">
                       <div class="flex">
                         ${renderStars(comentario.calificacion)}
                       </div>
                       <span class="text-sm text-gray-500">
-                        ${new Date(comentario.created_at).toLocaleDateString('es-ES')}
+                        ${new Date(comentario.created_at).toLocaleDateString("es-ES")}
                       </span>
                     </div>
                   </div>
@@ -526,59 +555,66 @@ if (imagenes.length === 0) {
                 ${comentario.comentario}
               </p>
             </div>
-          `).join('');
+          `
+            )
+            .join("");
         }
 
         // Manejar envío del formulario
-        document.getElementById('comment-form').addEventListener('submit', async function(e) {
-          e.preventDefault();
-          
-          const submitBtn = document.getElementById('submit-comment');
-          const originalText = submitBtn.textContent;
-          
-          if (selectedRating === 0) {
-            alert('Por favor selecciona una calificación');
-            return;
-          }
+        document
+          .getElementById("comment-form")
+          .addEventListener("submit", async function (e) {
+            e.preventDefault();
 
-          try {
-            submitBtn.textContent = 'Publicando...';
-            submitBtn.disabled = true;
+            const submitBtn = document.getElementById("submit-comment");
+            const originalText = submitBtn.textContent;
 
-            const formData = new FormData(this);
-            
-            const response = await fetch(`/api/cuartos/${cuartoId}/comentarios`, {
-              method: 'POST',
-              body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-              alert('¡Comentario publicado exitosamente!');
-              
-              // Limpiar formulario
-              document.getElementById('comentario').value = '';
-              selectedRating = 0;
-              document.getElementById('rating-input').value = '';
-              document.querySelectorAll('.star-btn').forEach(star => {
-                star.classList.remove('active');
-                star.style.color = '#D1D5DB';
-              });
-              
-              // Recargar comentarios
-              cargarComentarios();
-            } else {
-              alert('Error: ' + result.error);
+            if (selectedRating === 0) {
+              alert("Por favor selecciona una calificación");
+              return;
             }
-          } catch (error) {
-            console.error('Error:', error);
-            alert('Error publicando comentario');
-          } finally {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-          }
-        });
+
+            try {
+              submitBtn.textContent = "Publicando...";
+              submitBtn.disabled = true;
+
+              const formData = new FormData(this);
+
+              const response = await fetch(
+                `/api/cuartos/${cuartoId}/comentarios`,
+                {
+                  method: "POST",
+                  body: formData,
+                }
+              );
+
+              const result = await response.json();
+
+              if (result.success) {
+                alert("¡Comentario publicado exitosamente!");
+
+                // Limpiar formulario
+                document.getElementById("comentario").value = "";
+                selectedRating = 0;
+                document.getElementById("rating-input").value = "";
+                document.querySelectorAll(".star-btn").forEach((star) => {
+                  star.classList.remove("active");
+                  star.style.color = "#D1D5DB";
+                });
+
+                // Recargar comentarios
+                cargarComentarios();
+              } else {
+                alert("Error: " + result.error);
+              }
+            } catch (error) {
+              console.error("Error:", error);
+              alert("Error publicando comentario");
+            } finally {
+              submitBtn.textContent = originalText;
+              submitBtn.disabled = false;
+            }
+          });
 
         // Cargar comentarios al inicio
         cargarComentarios();
