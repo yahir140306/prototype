@@ -1,40 +1,82 @@
 import { createClient } from "../../../../lib/supabase";
 
-// GET - Obtener comentarios de un cuarto
 export async function GET({ params, request, cookies }) {
-  console.log("📝 GET comentarios del cuarto:", params.id);
+  console.log("📖 GET comentarios para cuarto:", params.id);
 
   try {
     const supabase = createClient({ request, cookies });
-    const cuartoId = params.id;
+    const cuartoId = parseInt(params.id); // Convertir a número
+
+    if (isNaN(cuartoId)) {
+      return new Response(
+        JSON.stringify({
+          error: "ID de cuarto inválido",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     // Obtener comentarios con información del usuario
-    const { data: comentarios, error } = await supabase
+    const { data: comentarios, error: comentariosError } = await supabase
       .from("comentarios")
       .select(
         `
         *,
-        usuarios:user_id (
-          email
-        )
+        user_id,
+        created_at,
+        comentario,
+        calificacion
       `
       )
       .eq("cuarto_id", cuartoId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error obteniendo comentarios:", error);
+    if (comentariosError) {
+      console.error("Error obteniendo comentarios:", comentariosError);
       return new Response(
         JSON.stringify({
           error: "Error obteniendo comentarios",
+          details: comentariosError.message,
           success: false,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
+    // Obtener información de usuarios para los comentarios
+    const comentariosConUsuarios = await Promise.all(
+      comentarios.map(async (comentario) => {
+        // Obtener email del usuario desde auth.users
+        const { data: userData, error: userError } = await supabase
+          .from("auth.users")
+          .select("email")
+          .eq("id", comentario.user_id)
+          .single();
+
+        const email = userData?.email || "Usuario";
+        const inicial = email.charAt(0).toUpperCase();
+
+        return {
+          ...comentario,
+          usuario_email: email,
+          usuario_inicial: inicial,
+          fecha_formateada: new Date(comentario.created_at).toLocaleDateString(
+            "es-ES",
+            {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          ),
+        };
+      })
+    );
+
     // Calcular estadísticas
-    const totalComentarios = comentarios?.length || 0;
+    const totalComentarios = comentarios.length;
     const promedioCalificacion =
       totalComentarios > 0
         ? comentarios.reduce((sum, c) => sum + c.calificacion, 0) /
@@ -42,41 +84,35 @@ export async function GET({ params, request, cookies }) {
         : 0;
 
     console.log(
-      `✅ ${totalComentarios} comentarios obtenidos, promedio: ${promedioCalificacion.toFixed(
-        1
-      )}`
+      `✅ Obtenidos ${totalComentarios} comentarios para cuarto ${cuartoId}`
     );
 
     return new Response(
       JSON.stringify({
         success: true,
-        comentarios: comentarios || [],
+        comentarios: comentariosConUsuarios,
         estadisticas: {
           total: totalComentarios,
-          promedio: Math.round(promedioCalificacion * 10) / 10, // Redondear a 1 decimal
+          promedio: Math.round(promedioCalificacion * 10) / 10,
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error general obteniendo comentarios:", error);
+    console.error("💥 Error en GET comentarios:", error);
     return new Response(
       JSON.stringify({
         error: "Error interno del servidor",
         details: error.message,
         success: false,
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
-// POST - Agregar nuevo comentario
 export async function POST({ params, request, cookies }) {
-  console.log("📝 POST nuevo comentario para cuarto:", params.id);
+  console.log("📝 POST comentario para cuarto:", params.id);
 
   try {
     const supabase = createClient({ request, cookies });
@@ -97,15 +133,27 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    const cuartoId = params.id;
-    const formData = await request.formData();
+    const cuartoId = parseInt(params.id); // Convertir a número
 
-    const comentario = formData.get("comentario")?.trim();
+    if (isNaN(cuartoId)) {
+      return new Response(
+        JSON.stringify({
+          error: "ID de cuarto inválido",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Obtener datos del formulario
+    const formData = await request.formData();
+    const comentario = formData.get("comentario")?.toString().trim();
     const calificacion = parseInt(formData.get("calificacion"));
 
-    console.log("📝 Datos del comentario:", {
+    console.log("Datos recibidos:", {
       comentario,
       calificacion,
+      cuartoId,
       userId: user.id,
     });
 
@@ -133,7 +181,7 @@ export async function POST({ params, request, cookies }) {
     // Verificar que el cuarto existe
     const { data: cuarto, error: cuartoError } = await supabase
       .from("cuartos")
-      .select("id, name")
+      .select("id")
       .eq("id", cuartoId)
       .single();
 
@@ -158,8 +206,7 @@ export async function POST({ params, request, cookies }) {
     if (comentarioExistente) {
       return new Response(
         JSON.stringify({
-          error:
-            "Ya has comentado este cuarto. Puedes editar tu comentario existente.",
+          error: "Ya has comentado este cuarto",
           success: false,
         }),
         { status: 409, headers: { "Content-Type": "application/json" } }
@@ -169,30 +216,20 @@ export async function POST({ params, request, cookies }) {
     // Insertar el comentario
     const { data: nuevoComentario, error: insertError } = await supabase
       .from("comentarios")
-      .insert([
-        {
-          cuarto_id: cuartoId,
-          user_id: user.id,
-          comentario,
-          calificacion,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select(
-        `
-        *,
-        usuarios:user_id (
-          email
-        )
-      `
-      )
+      .insert({
+        cuarto_id: cuartoId,
+        user_id: user.id,
+        comentario: comentario,
+        calificacion: calificacion,
+      })
+      .select()
       .single();
 
     if (insertError) {
       console.error("Error insertando comentario:", insertError);
       return new Response(
         JSON.stringify({
-          error: "Error guardando comentario",
+          error: "Error guardando el comentario",
           details: insertError.message,
           success: false,
         }),
@@ -200,28 +237,25 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    console.log("🎉 Comentario agregado exitosamente:", nuevoComentario.id);
+    console.log("✅ Comentario creado exitosamente:", nuevoComentario.id);
 
     return new Response(
       JSON.stringify({
         success: true,
+        message: "Comentario agregado exitosamente",
         comentario: nuevoComentario,
-        mensaje: "Comentario agregado exitosamente",
       }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error general agregando comentario:", error);
+    console.error("💥 Error en POST comentario:", error);
     return new Response(
       JSON.stringify({
         error: "Error interno del servidor",
         details: error.message,
         success: false,
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
