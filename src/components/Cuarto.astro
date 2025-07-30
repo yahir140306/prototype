@@ -15,26 +15,7 @@ const cuartosProcesados =
     imagen_1: decodeHexUrl(cuarto.imagen_1),
   })) || [];
 
-// console.log("=== DEBUG CONSULTA SUPABASE ===");
-// console.log("Error:", error);
-// console.log("Cuartos obtenidos:", cuartos);
-// console.log("================================");
-
-// Procesar las URLs de los cuartos solo si hay datos
-
-// console.log("=== DEBUG CUARTOS PROCESADOS ===");
-// if (cuartos && cuartos.length > 0) {
-//   cuartosProcesados.forEach((cuarto, index) => {
-//     console.log(
-//       `Cuarto ${index} - imagen_1 original:`,
-//       cuartos[index]?.imagen_1
-//     );
-//     console.log(`Cuarto ${index} - imagen_1 decodificada:`, cuarto.imagen_1);
-//   });
-// } else {
-//   console.log("No hay cuartos para procesar");
-// }
-// console.log("==============================");
+// ...existing code...
 ---
 
 <html lang="es">
@@ -48,56 +29,155 @@ const cuartosProcesados =
     <div class="container mx-auto px-4 py-8">
       <h1 class="text-3xl font-bold text-center mb-8">Cuartos Disponibles</h1>
 
-      <!-- Filtro de Precios -->
-      <div
-        class="max-w-md mx-auto mb-8 p-6 bg-white rounded-lg shadow-sm border"
-      >
-        <h2 class="text-lg font-semibold mb-4 text-gray-800">
-          Filtrar por Precio
-        </h2>
-
-        <div class="space-y-4">
-          <div class="flex items-center space-x-4">
-            <label class="text-sm font-medium text-gray-700 w-16">Desde:</label>
-            <input
-              type="number"
-              id="precio-min"
-              min="0"
-              step="1000"
-              placeholder="0"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div class="flex items-center space-x-4">
-            <label class="text-sm font-medium text-gray-700 w-16">Hasta:</label>
-            <input
-              type="number"
-              id="precio-max"
-              min="0"
-              step="1000"
-              placeholder="Sin límite"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div class="flex space-x-2">
-            <button
-              id="filtrar-btn"
-              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-200 font-medium"
+      <!-- Botón de Filtro Desplegable -->
+      <div class="relative mb-8">
+        <button
+          id="filtro-toggle"
+          class="w-full md:w-auto flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <div class="flex items-center space-x-2">
+            <!-- Icono de filtro -->
+            <svg
+              class="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Filtrar
-            </button>
-            <button
-              id="limpiar-btn"
-              class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200 font-medium"
-            >
-              Limpiar
-            </button>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 2v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              ></path>
+            </svg>
+            <span class="font-medium text-gray-700">Filtrar por Precio</span>
+            <span id="filtro-status" class="text-sm text-gray-500 hidden">
+              (Activo)
+            </span>
+          </div>
+          <!-- Flecha desplegable -->
+          <svg
+            id="filtro-arrow"
+            class="w-5 h-5 text-gray-400 transition-transform duration-200"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+
+        <!-- Panel de Filtro Desplegable -->
+        <div
+          id="filtro-panel"
+          class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 opacity-0 invisible transform scale-95 transition-all duration-200 ease-out"
+        >
+          <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-800">
+              Rango de Precios
+            </h3>
+
+            <div class="space-y-4">
+              <!-- Campo Precio Mínimo -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 block">
+                  Precio Mínimo
+                </label>
+                <div class="relative">
+                  <span
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"
+                  >
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    id="precio-min"
+                    min="0"
+                    step="1000"
+                    placeholder="0"
+                    class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                  />
+                </div>
+              </div>
+
+              <!-- Campo Precio Máximo -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 block">
+                  Precio Máximo
+                </label>
+                <div class="relative">
+                  <span
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"
+                  >
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    id="precio-max"
+                    min="0"
+                    step="1000"
+                    placeholder="Sin límite"
+                    class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                  />
+                </div>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div
+                class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100"
+              >
+                <button
+                  id="filtrar-btn"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
+                >
+                  <div class="flex items-center justify-center space-x-2">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Aplicar Filtro</span>
+                  </div>
+                </button>
+                <button
+                  id="limpiar-btn"
+                  class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg transition-colors duration-200 font-medium border border-gray-200"
+                >
+                  <div class="flex items-center justify-center space-x-2">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      ></path>
+                    </svg>
+                    <span>Limpiar</span>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Mensajes de Error -->
       {
         error && (
           <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -112,11 +192,27 @@ const cuartosProcesados =
         )
       }
 
+      <!-- Estados de Carga -->
       {
         !error && cuartosProcesados && cuartosProcesados.length === 0 && (
           <div class="text-center py-12">
-            <p class="text-gray-500 text-lg">
-              No hay cuartos disponibles en este momento.
+            <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <svg
+                class="w-8 h-8 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+            <p class="text-gray-500 text-lg font-medium">
+              No hay cuartos disponibles
             </p>
             <p class="text-gray-400 text-sm mt-2">
               ¿Quieres agregar el primer cuarto?
@@ -128,37 +224,43 @@ const cuartosProcesados =
       {
         !error && !cuartosProcesados && (
           <div class="text-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
             <p class="text-gray-500 text-lg">Cargando cuartos...</p>
           </div>
         )
       }
 
-      <div id="cuartos-container" class="grid grid-cols-1 gap-6">
+      <!-- Grid de Cuartos -->
+      <div
+        id="cuartos-container"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
         {
           cuartosProcesados?.map((cuarto) => (
             <div
-              class="cuarto-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-white"
+              class="cuarto-card border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 bg-white transform hover:-translate-y-1"
               data-precio={cuarto.precio}
             >
-              <div class="relative">
+              <div class="relative group">
                 <img
                   src={cuarto.imagen_1 || "/Images/default.jpeg"}
                   alt={cuarto.name}
-                  class="w-full h-48 object-cover"
+                  class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
                 />
-                <div class="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-                  Disponible
+                <div class="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                  ✓ Disponible
                 </div>
+                <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
               </div>
 
-              <div class="p-4">
+              <div class="p-5">
                 <h2 class="text-xl font-semibold mb-2 text-gray-800 line-clamp-1">
                   {cuarto.name}
                 </h2>
 
-                <p class="text-gray-600 mb-3 line-clamp-2 text-sm leading-relaxed">
+                <p class="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">
                   {cuarto.descripcion}
                 </p>
 
@@ -172,9 +274,9 @@ const cuartosProcesados =
 
                   <a
                     href={`/cuarto/${cuarto.id}`}
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md font-medium"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium transform hover:scale-105"
                   >
-                    Ver más
+                    Ver más →
                   </a>
                 </div>
               </div>
@@ -199,16 +301,105 @@ const cuartosProcesados =
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+
+      /* Animaciones suaves para el panel desplegable */
+      #filtro-panel.show {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        #filtro-panel {
+          left: 0;
+          right: 0;
+          margin: 0 1rem;
+          width: auto;
+        }
+      }
+
+      /* Mejorar la transición del hover en cards */
+      .cuarto-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .cuarto-card:hover {
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
     </style>
 
     <script is:inline>
-      // Filtrado de cuartos por precio
       document.addEventListener("DOMContentLoaded", function () {
+        // Elementos del DOM
+        const filtroToggle = document.getElementById("filtro-toggle");
+        const filtroPanel = document.getElementById("filtro-panel");
+        const filtroArrow = document.getElementById("filtro-arrow");
+        const filtroStatus = document.getElementById("filtro-status");
+        const precioMinInput = document.getElementById("precio-min");
+        const precioMaxInput = document.getElementById("precio-max");
+        const filtrarBtn = document.getElementById("filtrar-btn");
+        const limpiarBtn = document.getElementById("limpiar-btn");
+
+        let panelAbierto = false;
+
+        // Toggle del panel desplegable
+        filtroToggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          togglePanel();
+        });
+
+        // Cerrar panel al hacer clic fuera
+        document.addEventListener("click", function (e) {
+          if (
+            !filtroPanel.contains(e.target) &&
+            !filtroToggle.contains(e.target)
+          ) {
+            cerrarPanel();
+          }
+        });
+
+        // Prevenir que clicks dentro del panel lo cierren
+        filtroPanel.addEventListener("click", function (e) {
+          e.stopPropagation();
+        });
+
+        function togglePanel() {
+          if (panelAbierto) {
+            cerrarPanel();
+          } else {
+            abrirPanel();
+          }
+        }
+
+        function abrirPanel() {
+          panelAbierto = true;
+          filtroPanel.classList.add("show");
+          filtroArrow.style.transform = "rotate(180deg)";
+          filtroToggle.classList.add(
+            "ring-2",
+            "ring-blue-500",
+            "border-blue-500"
+          );
+        }
+
+        function cerrarPanel() {
+          panelAbierto = false;
+          filtroPanel.classList.remove("show");
+          filtroArrow.style.transform = "rotate(0deg)";
+          filtroToggle.classList.remove(
+            "ring-2",
+            "ring-blue-500",
+            "border-blue-500"
+          );
+        }
+
+        // Funciones de filtrado
         function filtrarCuartos() {
-          const precioMin =
-            parseInt(document.getElementById("precio-min").value) || 0;
-          const precioMax =
-            parseInt(document.getElementById("precio-max").value) || Infinity;
+          const precioMin = parseInt(precioMinInput.value) || 0;
+          const precioMax = parseInt(precioMaxInput.value) || Infinity;
 
           const cuartoCards = document.querySelectorAll(".cuarto-card");
           let cuartosMostrados = 0;
@@ -224,28 +415,44 @@ const cuartosProcesados =
             }
           });
 
+          // Mostrar status del filtro
+          if (precioMinInput.value || precioMaxInput.value) {
+            filtroStatus.classList.remove("hidden");
+            filtroToggle.classList.add("bg-blue-50", "border-blue-300");
+          }
+
           mostrarMensajeResultados(
             cuartosMostrados,
             precioMin,
             precioMax,
             cuartoCards.length
           );
+
+          // Cerrar panel después de filtrar
+          cerrarPanel();
         }
 
         function limpiarFiltros() {
-          document.getElementById("precio-min").value = "";
-          document.getElementById("precio-max").value = "";
+          precioMinInput.value = "";
+          precioMaxInput.value = "";
 
           const cuartoCards = document.querySelectorAll(".cuarto-card");
           cuartoCards.forEach(function (card) {
             card.style.display = "block";
           });
 
+          // Ocultar status del filtro
+          filtroStatus.classList.add("hidden");
+          filtroToggle.classList.remove("bg-blue-50", "border-blue-300");
+
           const mensajeExistente =
             document.getElementById("mensaje-resultados");
           if (mensajeExistente) {
             mensajeExistente.remove();
           }
+
+          // Cerrar panel después de limpiar
+          cerrarPanel();
         }
 
         function mostrarMensajeResultados(cantidad, min, max, total) {
@@ -260,46 +467,51 @@ const cuartosProcesados =
           if (cantidad === 0) {
             const mensaje = document.createElement("div");
             mensaje.id = "mensaje-resultados";
-            mensaje.className = "text-center py-8 px-4";
-            mensaje.innerHTML =
-              '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">' +
-              '<h3 class="text-lg font-medium text-yellow-800 mb-2">No se encontraron cuartos</h3>' +
-              '<p class="text-yellow-600">' +
-              "No hay cuartos disponibles en el rango de precios de " +
-              "<strong>$" +
-              min.toLocaleString() +
-              "</strong> " +
-              (max === Infinity
-                ? "en adelante"
-                : "a <strong>$" + max.toLocaleString() + "</strong>") +
-              "." +
-              "</p>" +
-              '<button onclick="limpiarFiltros()" class="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md transition-colors duration-200">' +
-              "Ver todos los cuartos" +
-              "</button>" +
-              "</div>";
-            cuartosContainer.appendChild(mensaje);
+            mensaje.className = "col-span-full text-center py-12";
+            mensaje.innerHTML = `
+              <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 max-w-md mx-auto">
+                <div class="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-yellow-800 mb-2">No se encontraron cuartos</h3>
+                <p class="text-yellow-700 mb-4">
+                  No hay cuartos disponibles en el rango de precios de 
+                  <strong>$${min.toLocaleString()}</strong> 
+                  ${max === Infinity ? "en adelante" : `a <strong>$${max.toLocaleString()}</strong>`}.
+                </p>
+                <button onclick="limpiarFiltros()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md">
+                  Ver todos los cuartos
+                </button>
+              </div>
+            `;
+            if (cuartosContainer.firstChild) {
+              cuartosContainer.insertBefore(
+                mensaje,
+                cuartosContainer.firstChild
+              );
+            } else {
+              cuartosContainer.appendChild(mensaje);
+            }
           } else if (cantidad < total) {
             const mensaje = document.createElement("div");
             mensaje.id = "mensaje-resultados";
-            mensaje.className = "text-center py-4 px-4";
-            mensaje.innerHTML =
-              '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">' +
-              '<p class="text-blue-700">' +
-              "Mostrando <strong>" +
-              cantidad +
-              "</strong> de <strong>" +
-              total +
-              "</strong> cuartos disponibles " +
-              "en el rango de <strong>$" +
-              min.toLocaleString() +
-              "</strong> " +
-              (max === Infinity
-                ? "en adelante"
-                : "a <strong>$" + max.toLocaleString() + "</strong>") +
-              "." +
-              "</p>" +
-              "</div>";
+            mensaje.className = "col-span-full text-center py-6";
+            mensaje.innerHTML = `
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
+                <div class="flex items-center justify-center space-x-2 text-blue-700">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p>
+                    Mostrando <strong>${cantidad}</strong> de <strong>${total}</strong> cuartos disponibles 
+                    en el rango de <strong>$${min.toLocaleString()}</strong> 
+                    ${max === Infinity ? "en adelante" : `a <strong>$${max.toLocaleString()}</strong>`}.
+                  </p>
+                </div>
+              </div>
+            `;
             if (cuartosContainer.firstChild) {
               cuartosContainer.insertBefore(
                 mensaje,
@@ -314,24 +526,30 @@ const cuartosProcesados =
         window.filtrarCuartos = filtrarCuartos;
 
         // Event listeners
-        document
-          .getElementById("filtrar-btn")
-          .addEventListener("click", filtrarCuartos);
-        document
-          .getElementById("limpiar-btn")
-          .addEventListener("click", limpiarFiltros);
+        filtrarBtn.addEventListener("click", filtrarCuartos);
+        limpiarBtn.addEventListener("click", limpiarFiltros);
 
-        document
-          .getElementById("precio-min")
-          .addEventListener("keypress", function (e) {
-            if (e.key === "Enter") filtrarCuartos();
-          });
+        // Filtrar con Enter
+        precioMinInput.addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            filtrarCuartos();
+          }
+        });
 
-        document
-          .getElementById("precio-max")
-          .addEventListener("keypress", function (e) {
-            if (e.key === "Enter") filtrarCuartos();
-          });
+        precioMaxInput.addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            filtrarCuartos();
+          }
+        });
+
+        // Cerrar panel con Escape
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && panelAbierto) {
+            cerrarPanel();
+          }
+        });
       });
     </script>
   </body>
