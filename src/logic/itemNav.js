@@ -17,8 +17,8 @@ export const items = [
     requiresAuth: false,
   },
   {
-    label: "Buscar",
-    href: "/buscar",
+    label: "Perfil",
+    href: "/protected",
     isButton: false,
     requiresAuth: false,
   },
