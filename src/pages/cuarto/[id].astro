@@ -27,30 +27,6 @@ const imagenes = [cuarto.imagen_1, cuarto.imagen_2, cuarto.imagen_3]
 if (imagenes.length === 0) {
   imagenes.push("/Images/default.jpeg");
 }
-
-// En la sección del script
-const cuartoId = cuarto.id; // Asegurar que esto sea un número válido
-
-// En el JavaScript del cliente
-async function cargarComentarios() {
-  try {
-    console.log("🔍 Cargando comentarios para cuarto ID:", cuartoId);
-    const response = await fetch(`/api/cuartos/${cuartoId}/comentarios`);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("❌ Error cargando comentarios:", errorData);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("✅ Comentarios cargados:", data);
-
-    // Resto del código...
-  } catch (error) {
-    console.error("💥 Error en cargarComentarios:", error);
-  }
-}
 ---
 
 <Layout>
@@ -403,74 +379,14 @@ async function cargarComentarios() {
         </div>
       </div>
 
-      <!-- Scripts para descarga y autoplay -->
-      <script is:inline>
-        // Función para descargar la tarjeta
-        async function descargarTarjeta() {
-          const downloadBtn = document.getElementById("download-btn");
-          const originalText = downloadBtn.innerHTML;
-
-          try {
-            // Cambiar texto del botón
-            downloadBtn.innerHTML = `
-              <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              Generando...
-            `;
-            downloadBtn.disabled = true;
-
-            const card = document.getElementById("download-card");
-
-            // Configuración para html2canvas
-            const canvas = await html2canvas(card, {
-              width: 800,
-              height: 600,
-              scale: 2, // Mayor resolución
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: null,
-              logging: false,
-              onclone: function (clonedDoc) {
-                // Asegurar que las imágenes se carguen en el clon
-                const clonedCard = clonedDoc.getElementById("download-card");
-                clonedCard.style.position = "relative";
-                clonedCard.style.top = "0";
-                clonedCard.style.left = "0";
-              },
-            });
-
-            // Crear el enlace de descarga
-            const link = document.createElement("a");
-            link.download = `cuarto-${encodeURIComponent("${cuarto.name}")}-${Date.now()}.png`;
-            link.href = canvas.toDataURL("image/png", 1.0);
-
-            // Simular click para descargar
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Mostrar mensaje de éxito
-            alert("¡Tarjeta descargada exitosamente!");
-          } catch (error) {
-            console.error("Error generando tarjeta:", error);
-            alert("Error al generar la tarjeta. Inténtalo de nuevo.");
-          } finally {
-            // Restaurar botón
-            downloadBtn.innerHTML = originalText;
-            downloadBtn.disabled = false;
-          }
-        }
-
-        // Event listener para el botón de descarga
-        document
-          .getElementById("download-btn")
-          .addEventListener("click", descargarTarjeta);
-
+      <!-- Scripts para descarga y comentarios -->
+      <script is:inline define:vars={{ cuarto }}>
         // === SISTEMA DE COMENTARIOS ===
 
         let selectedRating = 0;
-        const cuartoId = "{cuarto.id}";
+        const cuartoId = cuarto.id; // ✅ CORREGIDO: Usando define:vars
+
+        console.log("🏠 ID del cuarto:", cuartoId); // Para debug
 
         // Función para renderizar estrellas
         function renderStars(rating, className = "text-yellow-400") {
@@ -509,10 +425,19 @@ async function cargarComentarios() {
         // Cargar comentarios al cargar la página
         async function cargarComentarios() {
           try {
+            console.log("🔍 Cargando comentarios para cuarto ID:", cuartoId);
             const response = await fetch(
               `/api/cuartos/${cuartoId}/comentarios`
             );
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              console.error("❌ Error cargando comentarios:", errorData);
+              return;
+            }
+
             const data = await response.json();
+            console.log("✅ Comentarios cargados:", data);
 
             if (data.success) {
               mostrarEstadisticas(data.estadisticas);
@@ -521,7 +446,7 @@ async function cargarComentarios() {
               console.error("Error cargando comentarios:", data.error);
             }
           } catch (error) {
-            console.error("Error:", error);
+            console.error("💥 Error en cargarComentarios:", error);
           }
         }
 
@@ -558,18 +483,18 @@ async function cargarComentarios() {
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                    ${comentario.usuarios?.email ? comentario.usuarios.email.charAt(0).toUpperCase() : "U"}
+                    ${comentario.usuario_inicial || "U"}
                   </div>
                   <div>
                     <h4 class="font-medium text-gray-900">
-                      ${comentario.usuarios?.email ? comentario.usuarios.email.split("@")[0] : "Usuario"}
+                      ${comentario.usuario_email ? comentario.usuario_email.split("@")[0] : "Usuario"}
                     </h4>
                     <div class="flex items-center space-x-2">
                       <div class="flex">
                         ${renderStars(comentario.calificacion)}
                       </div>
                       <span class="text-sm text-gray-500">
-                        ${new Date(comentario.created_at).toLocaleDateString("es-ES")}
+                        ${comentario.fecha_formateada || new Date(comentario.created_at).toLocaleDateString("es-ES")}
                       </span>
                     </div>
                   </div>
@@ -603,6 +528,7 @@ async function cargarComentarios() {
               submitBtn.disabled = true;
 
               const formData = new FormData(this);
+              console.log("📝 Enviando comentario para cuarto:", cuartoId);
 
               const response = await fetch(
                 `/api/cuartos/${cuartoId}/comentarios`,
@@ -613,6 +539,7 @@ async function cargarComentarios() {
               );
 
               const result = await response.json();
+              console.log("📨 Respuesta del servidor:", result);
 
               if (result.success) {
                 alert("¡Comentario publicado exitosamente!");
@@ -632,7 +559,7 @@ async function cargarComentarios() {
                 alert("Error: " + result.error);
               }
             } catch (error) {
-              console.error("Error:", error);
+              console.error("💥 Error:", error);
               alert("Error publicando comentario");
             } finally {
               submitBtn.textContent = originalText;
@@ -640,10 +567,72 @@ async function cargarComentarios() {
             }
           });
 
-        // Cargar comentarios al inicio
-        cargarComentarios();
+        // === SISTEMA DE DESCARGA ===
+
+        // Función para descargar la tarjeta
+        async function descargarTarjeta() {
+          const downloadBtn = document.getElementById("download-btn");
+          const originalText = downloadBtn.innerHTML;
+
+          try {
+            // Cambiar texto del botón
+            downloadBtn.innerHTML = `
+              <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Generando...
+            `;
+            downloadBtn.disabled = true;
+
+            const card = document.getElementById("download-card");
+
+            // Configuración para html2canvas
+            const canvas = await html2canvas(card, {
+              width: 800,
+              height: 600,
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: null,
+              logging: false,
+              onclone: function (clonedDoc) {
+                const clonedCard = clonedDoc.getElementById("download-card");
+                clonedCard.style.position = "relative";
+                clonedCard.style.top = "0";
+                clonedCard.style.left = "0";
+              },
+            });
+
+            // Crear el enlace de descarga
+            const link = document.createElement("a");
+            link.download = `cuarto-${encodeURIComponent(cuarto.name)}-${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png", 1.0);
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            alert("¡Tarjeta descargada exitosamente!");
+          } catch (error) {
+            console.error("Error generando tarjeta:", error);
+            alert("Error al generar la tarjeta. Inténtalo de nuevo.");
+          } finally {
+            downloadBtn.innerHTML = originalText;
+            downloadBtn.disabled = false;
+          }
+        }
+
+        // Event listeners cuando el DOM esté listo
+        document.addEventListener("DOMContentLoaded", function () {
+          // Botón de descarga
+          document
+            .getElementById("download-btn")
+            .addEventListener("click", descargarTarjeta);
+
+          // Cargar comentarios al inicio
+          cargarComentarios();
+        });
       </script>
-      <script src="./script.js"></script>
     </body>
   </html>
 </Layout>
