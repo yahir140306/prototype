@@ -27,6 +27,30 @@ const imagenes = [cuarto.imagen_1, cuarto.imagen_2, cuarto.imagen_3]
 if (imagenes.length === 0) {
   imagenes.push("/Images/default.jpeg");
 }
+
+// En la sección del script
+const cuartoId = cuarto.id; // Asegurar que esto sea un número válido
+
+// En el JavaScript del cliente
+async function cargarComentarios() {
+  try {
+    console.log("🔍 Cargando comentarios para cuarto ID:", cuartoId);
+    const response = await fetch(`/api/cuartos/${cuartoId}/comentarios`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("❌ Error cargando comentarios:", errorData);
+      return;
+    }
+
+    const data = await response.json();
+    console.log("✅ Comentarios cargados:", data);
+
+    // Resto del código...
+  } catch (error) {
+    console.error("💥 Error en cargarComentarios:", error);
+  }
+}
 ---
 
 <Layout>

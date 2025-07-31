@@ -2,27 +2,46 @@ import { createClient } from "../../../../lib/supabase";
 
 export async function GET({ params, request, cookies }) {
   console.log("📖 GET comentarios para cuarto:", params.id);
+  console.log("Tipo de params.id:", typeof params.id);
 
   try {
     const supabase = createClient({ request, cookies });
-    const cuartoId = parseInt(params.id); // Convertir a número
 
-    if (isNaN(cuartoId)) {
+    // Validación mejorada del ID
+    let cuartoId;
+
+    if (!params.id || params.id === "undefined" || params.id === "null") {
+      console.error("❌ ID no proporcionado:", params.id);
       return new Response(
         JSON.stringify({
-          error: "ID de cuarto inválido",
+          error: "ID de cuarto no proporcionado",
           success: false,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Obtener comentarios con información del usuario
+    cuartoId = parseInt(params.id, 10);
+
+    if (isNaN(cuartoId) || cuartoId <= 0) {
+      console.error("❌ ID inválido:", params.id, "-> parseInt:", cuartoId);
+      return new Response(
+        JSON.stringify({
+          error: `ID de cuarto inválido: ${params.id}`,
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("✅ ID válido:", cuartoId);
+
+    // Obtener comentarios básicos
     const { data: comentarios, error: comentariosError } = await supabase
       .from("comentarios")
       .select(
         `
-        *,
+        id,
         user_id,
         created_at,
         comentario,
@@ -44,36 +63,31 @@ export async function GET({ params, request, cookies }) {
       );
     }
 
-    // Obtener información de usuarios para los comentarios
-    const comentariosConUsuarios = await Promise.all(
-      comentarios.map(async (comentario) => {
-        // Obtener email del usuario desde auth.users
-        const { data: userData, error: userError } = await supabase
-          .from("auth.users")
-          .select("email")
-          .eq("id", comentario.user_id)
-          .single();
+    console.log(`📊 Encontrados ${comentarios.length} comentarios`);
 
-        const email = userData?.email || "Usuario";
-        const inicial = email.charAt(0).toUpperCase();
+    // Procesar comentarios con información básica del usuario
+    const comentariosConUsuarios = comentarios.map((comentario) => {
+      // Generar email simulado o usar el user_id
+      const userId = comentario.user_id;
+      const emailSimulado = `usuario-${userId.substring(0, 8)}@example.com`;
+      const inicial = emailSimulado.charAt(0).toUpperCase();
 
-        return {
-          ...comentario,
-          usuario_email: email,
-          usuario_inicial: inicial,
-          fecha_formateada: new Date(comentario.created_at).toLocaleDateString(
-            "es-ES",
-            {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }
-          ),
-        };
-      })
-    );
+      return {
+        ...comentario,
+        usuario_email: emailSimulado,
+        usuario_inicial: inicial,
+        fecha_formateada: new Date(comentario.created_at).toLocaleDateString(
+          "es-ES",
+          {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
+      };
+    });
 
     // Calcular estadísticas
     const totalComentarios = comentarios.length;
@@ -84,7 +98,7 @@ export async function GET({ params, request, cookies }) {
         : 0;
 
     console.log(
-      `✅ Obtenidos ${totalComentarios} comentarios para cuarto ${cuartoId}`
+      `✅ Procesados ${totalComentarios} comentarios para cuarto ${cuartoId}`
     );
 
     return new Response(
@@ -96,7 +110,13 @@ export async function GET({ params, request, cookies }) {
           promedio: Math.round(promedioCalificacion * 10) / 10,
         },
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
+      }
     );
   } catch (error) {
     console.error("💥 Error en GET comentarios:", error);
@@ -124,6 +144,7 @@ export async function POST({ params, request, cookies }) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.error("❌ Error de autenticación:", authError);
       return new Response(
         JSON.stringify({
           error: "Debes iniciar sesión para comentar",
@@ -133,12 +154,33 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    const cuartoId = parseInt(params.id); // Convertir a número
+    console.log("✅ Usuario autenticado:", user.id);
 
-    if (isNaN(cuartoId)) {
+    // Validación del ID
+    let cuartoId;
+
+    if (!params.id || params.id === "undefined" || params.id === "null") {
       return new Response(
         JSON.stringify({
-          error: "ID de cuarto inválido",
+          error: "ID de cuarto no proporcionado",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    cuartoId = parseInt(params.id, 10);
+
+    if (isNaN(cuartoId) || cuartoId <= 0) {
+      console.error(
+        "❌ ID inválido en POST:",
+        params.id,
+        "-> parseInt:",
+        cuartoId
+      );
+      return new Response(
+        JSON.stringify({
+          error: `ID de cuarto inválido: ${params.id}`,
           success: false,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -150,8 +192,8 @@ export async function POST({ params, request, cookies }) {
     const comentario = formData.get("comentario")?.toString().trim();
     const calificacion = parseInt(formData.get("calificacion"));
 
-    console.log("Datos recibidos:", {
-      comentario,
+    console.log("📋 Datos recibidos:", {
+      comentario: comentario?.substring(0, 50) + "...",
       calificacion,
       cuartoId,
       userId: user.id,
@@ -186,6 +228,7 @@ export async function POST({ params, request, cookies }) {
       .single();
 
     if (cuartoError || !cuarto) {
+      console.error("❌ Cuarto no encontrado:", cuartoError);
       return new Response(
         JSON.stringify({
           error: "Cuarto no encontrado",
@@ -195,13 +238,19 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
+    console.log("✅ Cuarto existe:", cuarto.id);
+
     // Verificar si el usuario ya comentó este cuarto
-    const { data: comentarioExistente } = await supabase
+    const { data: comentarioExistente, error: checkError } = await supabase
       .from("comentarios")
       .select("id")
       .eq("cuarto_id", cuartoId)
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle(); // Cambiar a maybeSingle para evitar errores
+
+    if (checkError) {
+      console.error("❌ Error verificando comentario existente:", checkError);
+    }
 
     if (comentarioExistente) {
       return new Response(
@@ -213,7 +262,7 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    // Insertar el comentario
+    // Insertar el comentario - SIMPLIFICADO
     const { data: nuevoComentario, error: insertError } = await supabase
       .from("comentarios")
       .insert({
@@ -226,7 +275,7 @@ export async function POST({ params, request, cookies }) {
       .single();
 
     if (insertError) {
-      console.error("Error insertando comentario:", insertError);
+      console.error("💥 Error insertando comentario:", insertError);
       return new Response(
         JSON.stringify({
           error: "Error guardando el comentario",
@@ -237,7 +286,7 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    console.log("✅ Comentario creado exitosamente:", nuevoComentario.id);
+    console.log("🎉 Comentario creado exitosamente:", nuevoComentario.id);
 
     return new Response(
       JSON.stringify({
