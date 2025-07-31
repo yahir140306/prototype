@@ -246,7 +246,7 @@ export async function POST({ params, request, cookies }) {
       .select("id")
       .eq("cuarto_id", cuartoId)
       .eq("user_id", user.id)
-      .maybeSingle(); // Cambiar a maybeSingle para evitar errores
+      .maybeSingle();
 
     if (checkError) {
       console.error("❌ Error verificando comentario existente:", checkError);
@@ -262,7 +262,7 @@ export async function POST({ params, request, cookies }) {
       );
     }
 
-    // Insertar el comentario - SIMPLIFICADO
+    // Insertar el comentario
     const { data: nuevoComentario, error: insertError } = await supabase
       .from("comentarios")
       .insert({
