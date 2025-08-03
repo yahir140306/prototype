@@ -151,6 +151,45 @@ import Layout from "../layouts/Layout.astro";
               </div>
             </div>
 
+            <!-- Campo de Número de Celular -->
+            <div class="form-group">
+              <label for="celular">Número de Celular (WhatsApp)*</label>
+              <input
+                type="tel"
+                id="celular"
+                name="celular"
+                placeholder="Ej: +52 55 1234 5678"
+                required
+                pattern="[\+]?[0-9\s\-\(\)]+"
+                title="Ingresa un número de teléfono válido"
+              />
+              <small>Este número se usará para contacto por WhatsApp</small>
+            </div>
+
+            <!-- Campo de Características -->
+            <div class="form-group">
+              <label for="caracteristicas">Características del Cuarto*</label>
+              <textarea
+                id="caracteristicas"
+                name="caracteristicas"
+                rows="4"
+                placeholder="Describe las características del cuarto: tamaño, servicios incluidos, mobiliario, etc."
+                required
+                minlength="20"></textarea>
+            </div>
+
+            <!-- Campo de Ubicación -->
+            <div class="form-group">
+              <label for="ubicacion">Ubicación Específica*</label>
+              <textarea
+                id="ubicacion"
+                name="ubicacion"
+                rows="3"
+                placeholder="Describe la ubicación: colonia, referencias cercanas, accesos, etc."
+                required
+                minlength="10"></textarea>
+            </div>
+
             <!-- Price Field -->
             <div class="space-y-2">
               <label

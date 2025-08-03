@@ -1,12 +1,12 @@
 import { createClient } from "../../lib/supabase";
 
 export async function POST({ request, cookies }) {
-  console.log("🔥 Middleware executing for path: /api/agregar-cuarto");
+  console.log("🔥 Ejecutando agregar-cuarto endpoint");
 
   try {
     const supabase = createClient({ request, cookies });
 
-    // Verificar autenticación del usuario
+    // Verificar autenticación
     const {
       data: { user },
       error: authError,
@@ -25,24 +25,37 @@ export async function POST({ request, cookies }) {
 
     console.log("👤 Usuario autenticado:", user.id);
 
-    // Add timeout handling for mobile
+    // Timeout para dispositivos móviles
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Request timeout")), 45000); // 45 seconds
+      setTimeout(() => reject(new Error("Request timeout")), 45000);
     });
 
     const formDataPromise = request.formData();
     const formData = await Promise.race([formDataPromise, timeoutPromise]);
 
-    const name = formData.get("name");
-    const descripcion = formData.get("descripcion");
+    // ✅ CORREGIDO: Usar 'titulo' consistentemente
+    const titulo = formData.get("titulo")?.toString().trim();
+    const descripcion = formData.get("descripcion")?.toString().trim();
     const precio = parseFloat(formData.get("precio"));
+    const celular = formData.get("celular")?.toString().trim();
+    const caracteristicas = formData.get("caracteristicas")?.toString().trim();
+    const ubicacion = formData.get("ubicacion")?.toString().trim();
 
+    // Imágenes
     const imagen_1 = formData.get("imagen_1");
     const imagen_2 = formData.get("imagen_2");
     const imagen_3 = formData.get("imagen_3");
 
-    console.log("📝 Datos recibidos:", { name, descripcion, precio });
-    console.log("🖼️  Imágenes recibidas:", {
+    console.log("📝 Datos recibidos:", {
+      titulo,
+      descripcion,
+      precio,
+      celular: celular ? "✓" : "✗",
+      caracteristicas: caracteristicas ? "✓" : "✗",
+      ubicacion: ubicacion ? "✓" : "✗",
+    });
+
+    console.log("🖼️ Imágenes recibidas:", {
       imagen_1: imagen_1
         ? `${imagen_1.name} - ${imagen_1.size} bytes`
         : "No hay imagen",
@@ -54,19 +67,72 @@ export async function POST({ request, cookies }) {
         : "No hay imagen",
     });
 
-    // Validate required fields
-    if (!name || !descripcion || !precio || isNaN(precio)) {
+    // ✅ VALIDACIONES MEJORADAS
+    if (
+      !titulo ||
+      !descripcion ||
+      !precio ||
+      isNaN(precio) ||
+      !celular ||
+      !caracteristicas ||
+      !ubicacion
+    ) {
       console.log("❌ Faltan campos obligatorios");
       return new Response(
         JSON.stringify({
-          error: "Faltan campos obligatorios",
+          error:
+            "Todos los campos son obligatorios (título, descripción, precio, celular, características, ubicación)",
           success: false,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Validate image sizes (5MB max for mobile compatibility)
+    // Validar precio
+    if (precio <= 0) {
+      return new Response(
+        JSON.stringify({
+          error: "El precio debe ser mayor a 0",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validar formato de celular
+    const celularRegex = /^[\+]?[0-9\s\-\(\)]{10,20}$/;
+    if (!celularRegex.test(celular)) {
+      return new Response(
+        JSON.stringify({
+          error: "Formato de celular inválido. Ejemplo: +52 55 1234 5678",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validar longitud de campos de texto
+    if (caracteristicas.length < 20) {
+      return new Response(
+        JSON.stringify({
+          error: "Las características deben tener al menos 20 caracteres",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (ubicacion.length < 10) {
+      return new Response(
+        JSON.stringify({
+          error: "La ubicación debe tener al menos 10 caracteres",
+          success: false,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validar tamaño de imágenes (5MB max)
     const maxSize = 5 * 1024 * 1024; // 5MB
     const images = [imagen_1, imagen_2, imagen_3].filter(
       (img) => img && img.size > 0
@@ -84,6 +150,7 @@ export async function POST({ request, cookies }) {
       }
     }
 
+    // ✅ FUNCIÓN PARA SUBIR IMÁGENES
     async function subirImagen(imagen, nombreBase) {
       if (!imagen || imagen.size === 0) return null;
 
@@ -104,13 +171,12 @@ export async function POST({ request, cookies }) {
           .upload(fileName, imagen, {
             cacheControl: "3600",
             upsert: false,
-            duplex: "half", // Better for mobile uploads
+            duplex: "half",
           });
 
         if (uploadError) {
           console.error(`💥 Error subiendo ${nombreBase}:`, uploadError);
 
-          // More specific error messages
           if (
             uploadError.message.includes("413") ||
             uploadError.message.includes("too large")
@@ -144,6 +210,7 @@ export async function POST({ request, cookies }) {
       }
     }
 
+    // Subir imágenes
     let imagen_1_url = null;
     let imagen_2_url = null;
     let imagen_3_url = null;
@@ -170,25 +237,25 @@ export async function POST({ request, cookies }) {
       );
     }
 
-    console.log("💾 Guardando en base de datos con URLs:", {
-      imagen_principal: imagen_1_url,
-      imagen_1: imagen_1_url,
-      imagen_2: imagen_2_url,
-      imagen_3: imagen_3_url,
-    });
+    console.log("💾 Guardando en base de datos...");
 
+    // ✅ INSERTAR EN BASE DE DATOS CON TODOS LOS CAMPOS
     const { data: cuartoData, error: dbError } = await supabase
       .from("cuartos")
       .insert([
         {
-          name,
+          titulo, // ✅ Usar 'titulo' consistentemente
           descripcion,
           precio,
+          celular, // ✅ Nuevo campo
+          caracteristicas, // ✅ Nuevo campo
+          ubicacion, // ✅ Nuevo campo
           imagen_principal: imagen_1_url,
           imagen_1: imagen_1_url,
           imagen_2: imagen_2_url,
           imagen_3: imagen_3_url,
-          user_id: user.id, // Agregar el ID del usuario
+          user_id: user.id,
+          activo: true, // ✅ Campo activo
           created_at: new Date().toISOString(),
         },
       ])
@@ -199,7 +266,7 @@ export async function POST({ request, cookies }) {
       console.error("💥 Error insertando en BD:", dbError);
       return new Response(
         JSON.stringify({
-          error: "Error guardando cuarto",
+          error: "Error guardando cuarto en la base de datos",
           details: dbError.message,
           success: false,
         }),
@@ -207,25 +274,24 @@ export async function POST({ request, cookies }) {
       );
     }
 
-    console.log("🎉 Cuarto creado exitosamente:", cuartoData);
+    console.log("🎉 Cuarto creado exitosamente:", cuartoData.id);
 
     return new Response(
       JSON.stringify({
         success: true,
         cuarto: cuartoData,
-        mensaje: "Cuarto agregado exitosamente",
+        message: "Cuarto agregado exitosamente",
         imagenesSubidas: {
           imagen_1: !!imagen_1_url,
           imagen_2: !!imagen_2_url,
           imagen_3: !!imagen_3_url,
         },
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("💥 Error general:", error);
 
-    // Handle specific mobile errors
     let errorMessage = "Error interno del servidor";
     let statusCode = 500;
 
