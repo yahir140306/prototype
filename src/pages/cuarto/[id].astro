@@ -10,11 +10,29 @@ const supabase = createClient({
   cookies: Astro.cookies,
 });
 
+// ✅ CORREGIDO: Consulta para un solo cuarto
 const { data: cuarto, error } = await supabase
   .from("cuartos")
-  .select("*")
+  .select(
+    `
+    id,
+    titulo,
+    descripcion,
+    precio,
+    celular,
+    caracteristicas,
+    ubicacion,
+    imagen_1,
+    imagen_2,
+    imagen_3,
+    created_at,
+    user_id,
+    activo
+  `
+  )
   .eq("id", id)
-  .single();
+  .eq("activo", true)
+  .single(); // ✅ CORREGIDO: .single() para obtener un solo registro
 
 if (error || !cuarto) {
   return Astro.redirect("/404");
@@ -27,6 +45,17 @@ const imagenes = [cuarto.imagen_1, cuarto.imagen_2, cuarto.imagen_3]
 if (imagenes.length === 0) {
   imagenes.push("/Images/default.jpeg");
 }
+
+// ✅ Función para generar enlace de WhatsApp (servidor)
+function generarEnlaceWhatsApp(celular, titulo, precio) {
+  if (!celular) return "#";
+
+  const numeroLimpio = celular.replace(/[\s\-\(\)]/g, "");
+  const mensaje = `Hola! Me interesa el cuarto "${titulo}" con precio de $${precio}. ¿Podrías darme más información?`;
+  const mensajeCodificado = encodeURIComponent(mensaje);
+
+  return `https://wa.me/${numeroLimpio}?text=${mensajeCodificado}`;
+}
 ---
 
 <Layout>
@@ -34,14 +63,13 @@ if (imagenes.length === 0) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>{cuarto.name}</title>
+      <title>{cuarto.titulo}</title>
+      <!-- ✅ CORREGIDO: cuarto.titulo en lugar de cuarto.name -->
       <script src="https://cdn.tailwindcss.com"></script>
-      <!-- HTML2Canvas para generar imágenes -->
       <script
         src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
       ></script>
       <style>
-        /* Oculta scrollbar horizontal */
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -50,7 +78,6 @@ if (imagenes.length === 0) {
           scrollbar-width: none;
         }
 
-        /* Estilos para la tarjeta de descarga */
         .download-card {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           font-family:
@@ -75,7 +102,6 @@ if (imagenes.length === 0) {
           overflow: hidden;
         }
 
-        /* Estilos para el sistema de comentarios */
         .star-btn {
           cursor: pointer;
           user-select: none;
@@ -96,6 +122,25 @@ if (imagenes.length === 0) {
             0 4px 6px -1px rgba(0, 0, 0, 0.1),
             0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+
+        .btn-whatsapp {
+          background-color: #25d366;
+          color: white;
+          padding: 12px 20px;
+          text-decoration: none;
+          border-radius: 8px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: bold;
+          transition: background-color 0.3s;
+        }
+
+        .btn-whatsapp:hover {
+          background-color: #20ba5a;
+          color: white;
+          text-decoration: none;
+        }
       </style>
     </head>
     <body class="bg-gray-100 text-gray-800 min-h-screen">
@@ -104,12 +149,12 @@ if (imagenes.length === 0) {
         <a href="/" class="text-blue-600 hover:underline">← Volver</a>
 
         <!-- Título y precio -->
-        <h1 class="text-3xl font-bold">{cuarto.name}</h1>
+        <h1 class="text-3xl font-bold">{cuarto.titulo}</h1>
         <p class="text-xl text-blue-600 font-semibold">
           ${cuarto.precio} / mes
         </p>
 
-        <!-- Carrusel con autoplay -->
+        <!-- Carrusel -->
         <div
           id="carousel"
           class="overflow-x-auto no-scrollbar flex snap-x snap-mandatory scroll-smooth rounded-lg"
@@ -136,25 +181,18 @@ if (imagenes.length === 0) {
         <section class="grid md:grid-cols-2 gap-4">
           <div class="bg-white p-4 rounded-lg shadow">
             <h3 class="font-semibold mb-2">Características</h3>
-            <ul class="list-disc list-inside text-gray-700">
-              <li>Amueblado</li>
-              <li>Buena iluminación</li>
-              <li>Áreas comunes</li>
-            </ul>
+            <p class="text-gray-700">
+              {cuarto.caracteristicas || "No especificadas"}
+            </p>
           </div>
           <div class="bg-white p-4 rounded-lg shadow">
             <h3 class="font-semibold mb-2">Ubicación</h3>
-            <ul class="list-disc list-inside text-gray-700">
-              <li>Céntrico</li>
-              <li>Transporte cercano</li>
-              <li>Zona tranquila</li>
-            </ul>
+            <p class="text-gray-700">{cuarto.ubicacion || "No especificada"}</p>
           </div>
         </section>
 
-        <!-- Sección de Comentarios y Calificaciones -->
+        <!-- Sección de Comentarios -->
         <section class="space-y-6">
-          <!-- Header de Comentarios -->
           <div class="bg-white p-6 rounded-lg shadow">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-2xl font-bold text-gray-900">
@@ -162,9 +200,7 @@ if (imagenes.length === 0) {
               </h2>
               <div id="rating-summary" class="text-right">
                 <div class="flex items-center justify-end space-x-2">
-                  <div class="flex text-yellow-400" id="average-stars">
-                    <!-- Las estrellas se llenarán dinámicamente -->
-                  </div>
+                  <div class="flex text-yellow-400" id="average-stars"></div>
                   <span
                     id="average-rating"
                     class="text-lg font-semibold text-gray-700">0.0</span
@@ -184,9 +220,9 @@ if (imagenes.length === 0) {
 
                 <!-- Calificación con estrellas -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Calificación *
-                  </label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2"
+                    >Calificación *</label
+                  >
                   <div class="flex items-center space-x-1" id="star-rating">
                     {
                       [1, 2, 3, 4, 5].map((star) => (
@@ -247,18 +283,22 @@ if (imagenes.length === 0) {
           </div>
 
           <!-- Lista de Comentarios -->
-          <div id="comments-list" class="space-y-4">
-            <!-- Los comentarios se cargarán dinámicamente -->
-          </div>
+          <div id="comments-list" class="space-y-4"></div>
         </section>
 
-        <!-- Botón de contacto y descarga -->
+        <!-- Botones de contacto y descarga -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          <a
+            href={generarEnlaceWhatsApp(
+              cuarto.celular,
+              cuarto.titulo,
+              cuarto.precio
+            )}
+            target="_blank"
+            class="btn-whatsapp"
           >
-            Contactar al Propietario
-          </button>
+            📱 Contactar al Propietario
+          </a>
           <button
             id="download-btn"
             class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
@@ -313,26 +353,23 @@ if (imagenes.length === 0) {
 
           <!-- Contenido principal -->
           <div class="flex-1 flex items-center justify-between py-8">
-            <!-- Imagen principal -->
             <div class="w-80 h-60 rounded-xl overflow-hidden shadow-2xl">
               <img
                 src={imagenes[0]}
-                alt={cuarto.name}
+                alt={cuarto.titulo}
                 class="w-full h-full object-cover"
                 crossorigin="anonymous"
               />
             </div>
 
-            <!-- Información -->
             <div class="flex-1 pl-8">
               <h2 class="text-4xl font-bold mb-4 leading-tight">
-                {cuarto.name}
+                {cuarto.titulo}
               </h2>
               <p class="text-lg opacity-90 mb-6 leading-relaxed line-clamp-4">
                 {cuarto.descripcion}
               </p>
 
-              <!-- Características destacadas -->
               <div class="space-y-2">
                 <div class="flex items-center space-x-2">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -341,7 +378,13 @@ if (imagenes.length === 0) {
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                       clip-rule="evenodd"></path>
                   </svg>
-                  <span>Completamente amueblado</span>
+                  <span
+                    >{
+                      cuarto.caracteristicas
+                        ? cuarto.caracteristicas.split(",")[0]
+                        : "Completamente amueblado"
+                    }</span
+                  >
                 </div>
                 <div class="flex items-center space-x-2">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -350,7 +393,13 @@ if (imagenes.length === 0) {
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                       clip-rule="evenodd"></path>
                   </svg>
-                  <span>Ubicación céntrica</span>
+                  <span
+                    >{
+                      cuarto.ubicacion
+                        ? cuarto.ubicacion.split(",")[0]
+                        : "Ubicación céntrica"
+                    }</span
+                  >
                 </div>
                 <div class="flex items-center space-x-2">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -379,14 +428,12 @@ if (imagenes.length === 0) {
         </div>
       </div>
 
-      <!-- Scripts para descarga y comentarios -->
+      <!-- Scripts -->
       <script is:inline define:vars={{ cuarto }}>
-        // === SISTEMA DE COMENTARIOS ===
-
         let selectedRating = 0;
-        const cuartoId = cuarto.id; // ✅ CORREGIDO: Usando define:vars
+        const cuartoId = cuarto.id;
 
-        console.log("🏠 ID del cuarto:", cuartoId); // Para debug
+        console.log("🏠 ID del cuarto:", cuartoId);
 
         // Función para renderizar estrellas
         function renderStars(rating, className = "text-yellow-400") {
@@ -409,7 +456,6 @@ if (imagenes.length === 0) {
             selectedRating = parseInt(this.dataset.rating);
             document.getElementById("rating-input").value = selectedRating;
 
-            // Actualizar visualización de estrellas
             document.querySelectorAll(".star-btn").forEach((star, index) => {
               if (index < selectedRating) {
                 star.classList.add("active");
@@ -422,7 +468,7 @@ if (imagenes.length === 0) {
           });
         });
 
-        // Cargar comentarios al cargar la página
+        // Cargar comentarios
         async function cargarComentarios() {
           try {
             console.log("🔍 Cargando comentarios para cuarto ID:", cuartoId);
@@ -450,7 +496,7 @@ if (imagenes.length === 0) {
           }
         }
 
-        // Mostrar estadísticas de calificación
+        // Mostrar estadísticas
         function mostrarEstadisticas(estadisticas) {
           document.getElementById("average-rating").textContent =
             estadisticas.promedio.toFixed(1);
@@ -567,15 +613,12 @@ if (imagenes.length === 0) {
             }
           });
 
-        // === SISTEMA DE DESCARGA ===
-
-        // Función para descargar la tarjeta
+        // Función para descargar tarjeta
         async function descargarTarjeta() {
           const downloadBtn = document.getElementById("download-btn");
           const originalText = downloadBtn.innerHTML;
 
           try {
-            // Cambiar texto del botón
             downloadBtn.innerHTML = `
               <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -586,7 +629,6 @@ if (imagenes.length === 0) {
 
             const card = document.getElementById("download-card");
 
-            // Configuración para html2canvas
             const canvas = await html2canvas(card, {
               width: 800,
               height: 600,
@@ -603,9 +645,8 @@ if (imagenes.length === 0) {
               },
             });
 
-            // Crear el enlace de descarga
             const link = document.createElement("a");
-            link.download = `cuarto-${encodeURIComponent(cuarto.name)}-${Date.now()}.png`;
+            link.download = `cuarto-${encodeURIComponent(cuarto.titulo)}-${Date.now()}.png`;
             link.href = canvas.toDataURL("image/png", 1.0);
 
             document.body.appendChild(link);
@@ -622,14 +663,11 @@ if (imagenes.length === 0) {
           }
         }
 
-        // Event listeners cuando el DOM esté listo
+        // Event listeners
         document.addEventListener("DOMContentLoaded", function () {
-          // Botón de descarga
           document
             .getElementById("download-btn")
             .addEventListener("click", descargarTarjeta);
-
-          // Cargar comentarios al inicio
           cargarComentarios();
         });
       </script>
