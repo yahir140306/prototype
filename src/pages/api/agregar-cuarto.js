@@ -48,7 +48,7 @@ export async function POST({ request, cookies }) {
 
     console.log("📝 Datos recibidos:", {
       titulo,
-      descripcion,
+      descripcion: descripcion?.substring(0, 50) + "...", // Mostrar contenido real
       precio,
       celular: celular ? "✓" : "✗",
       caracteristicas: caracteristicas ? "✓" : "✗",
