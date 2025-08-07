@@ -150,13 +150,71 @@ console.log("==========================");
             <p class="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
           </div>
 
+          <!-- Celular -->
+          <div>
+            <label
+              for="celular"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Número de Celular
+            </label>
+            <input
+              type="tel"
+              id="celular"
+              name="celular"
+              value={cuarto.celular || ""}
+              pattern="[0-9]{10}"
+              maxlength="10"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              placeholder="3001234567"
+            />
+          </div>
+
+          <!-- Características -->
+          <div>
+            <label
+              for="caracteristicas"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Características
+            </label>
+            <textarea
+              id="caracteristicas"
+              name="caracteristicas"
+              rows="3"
+              maxlength="300"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none"
+              placeholder="Baño privado, WiFi, cocina compartida..."
+              >{cuarto.caracteristicas || ""}</textarea
+            >
+          </div>
+
+          <!-- Ubicación -->
+          <div>
+            <label
+              for="ubicacion"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Ubicación
+            </label>
+            <input
+              type="text"
+              id="ubicacion"
+              name="ubicacion"
+              value={cuarto.ubicacion || ""}
+              maxlength="100"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              placeholder="Barrio, zona, cerca de..."
+            />
+          </div>
+
           <!-- Precio -->
           <div>
             <label
               for="precio"
               class="block text-sm font-medium text-gray-700 mb-2"
             >
-              Precio Mensual (COP) *
+              Precio Mensual *
             </label>
             <div class="relative">
               <span
@@ -169,16 +227,15 @@ console.log("==========================");
                 name="precio"
                 value={cuarto.precio}
                 required
-                min="50000"
-                max="10000000"
+                min="0"
                 step="10000"
                 class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-gray-900"
-                placeholder="500000"
+                placeholder="1500"
               />
             </div>
-            <p class="text-xs text-gray-500 mt-1">
-              Precio entre $50,000 y $10,000,000
-            </p>
+            <!-- <p class="text-xs text-gray-500 mt-1">
+              Precio entre $0 y $10,000,000
+            </p> -->
           </div>
 
           <!-- Imágenes Actuales -->
