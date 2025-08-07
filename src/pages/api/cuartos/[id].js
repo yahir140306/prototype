@@ -150,7 +150,7 @@ export async function POST({ params, request, cookies }) {
 
     const formData = await request.formData();
 
-    const name = formData.get("titulo");
+    const titulo = formData.get("titulo")?.toString().trim();
     const descripcion = formData.get("descripcion");
     const precio = parseFloat(formData.get("precio"));
 
@@ -161,7 +161,7 @@ export async function POST({ params, request, cookies }) {
     console.log("📝 Datos de actualización:", { name, descripcion, precio });
 
     // Validar campos obligatorios
-    if (!name || !descripcion || !precio || isNaN(precio)) {
+    if (!titulo || !descripcion || !precio || isNaN(precio)) {
       return new Response(
         JSON.stringify({
           error: "Faltan campos obligatorios",
@@ -245,7 +245,7 @@ export async function POST({ params, request, cookies }) {
     const { data: cuartoActualizado, error: updateError } = await supabase
       .from("cuartos")
       .update({
-        name,
+        titulo,
         descripcion,
         precio,
         imagen_principal: imagen_1_url,
