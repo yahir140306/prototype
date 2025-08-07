@@ -158,7 +158,7 @@ export async function POST({ params, request, cookies }) {
     const imagen_2 = formData.get("imagen_2");
     const imagen_3 = formData.get("imagen_3");
 
-    console.log("📝 Datos de actualización:", { name, descripcion, precio });
+    console.log("📝 Datos de actualización:", { titulo, descripcion, precio });
 
     // Validar campos obligatorios
     if (!titulo || !descripcion || !precio || isNaN(precio)) {
@@ -242,22 +242,64 @@ export async function POST({ params, request, cookies }) {
     );
 
     // Actualizar el cuarto en la base de datos
+    console.log(
+      "🔄 Intentando actualizar cuarto:",
+      cuartoId,
+      "para usuario:",
+      user.id
+    );
+    console.log("📊 Datos a actualizar:", {
+      titulo,
+      descripcion,
+      precio,
+      imagen_1: imagen_1_url,
+      imagen_2: imagen_2_url,
+      imagen_3: imagen_3_url,
+    });
+
+    // Verificar si el cuarto existe antes de actualizar
+    console.log("🔍 Verificando cuarto existente...");
+    const { data: verificarCuarto, error: verificarError } = await supabase
+      .from("cuartos")
+      .select("*")
+      .eq("id", parseInt(cuartoId))
+      .eq("user_id", user.id);
+
+    console.log("📋 Resultado verificación:", {
+      found: verificarCuarto?.length || 0,
+      error: verificarError,
+      cuartoId: parseInt(cuartoId),
+      userId: user.id,
+    });
+
+    if (!verificarCuarto || verificarCuarto.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "No se encontró el cuarto para actualizar",
+          debug: {
+            cuartoId: parseInt(cuartoId),
+            userId: user.id,
+            verificarError: verificarError,
+          },
+          success: false,
+        }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const { data: cuartoActualizado, error: updateError } = await supabase
       .from("cuartos")
       .update({
         titulo,
         descripcion,
         precio,
-        imagen_principal: imagen_1_url,
         imagen_1: imagen_1_url,
         imagen_2: imagen_2_url,
         imagen_3: imagen_3_url,
-        updated_at: new Date().toISOString(),
       })
-      .eq("id", cuartoId)
+      .eq("id", parseInt(cuartoId))
       .eq("user_id", user.id)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       console.error("💥 Error actualizando cuarto:", updateError);
@@ -273,10 +315,15 @@ export async function POST({ params, request, cookies }) {
 
     console.log("🎉 Cuarto actualizado exitosamente:", cuartoActualizado);
 
+    // Tomar el primer resultado si hay múltiples
+    const cuarto = Array.isArray(cuartoActualizado)
+      ? cuartoActualizado[0]
+      : cuartoActualizado;
+
     return new Response(
       JSON.stringify({
         success: true,
-        cuarto: cuartoActualizado,
+        cuarto: cuarto,
         mensaje: "Cuarto actualizado exitosamente",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
