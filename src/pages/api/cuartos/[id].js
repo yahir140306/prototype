@@ -150,7 +150,7 @@ export async function POST({ params, request, cookies }) {
 
     const formData = await request.formData();
 
-    const name = formData.get("name");
+    const name = formData.get("titulo");
     const descripcion = formData.get("descripcion");
     const precio = parseFloat(formData.get("precio"));
 
