@@ -7,7 +7,11 @@ const supabase = createClient({
   cookies: Astro.cookies,
 });
 
-const { data: cuartos, error } = await supabase.from("cuartos").select("*");
+const { data: cuartos, error } = await supabase
+  .from("cuartos")
+  .select("*")
+  .eq("activo", true) // Solo mostrar cuartos activos
+  .order("created_at", { ascending: false });
 
 const cuartosProcesados =
   cuartos?.map((cuarto) => ({
