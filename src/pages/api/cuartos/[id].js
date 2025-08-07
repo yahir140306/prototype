@@ -1,7 +1,7 @@
 import { createClient } from "../../../lib/supabase";
 
 export async function DELETE({ params, request, cookies }) {
-  console.log("🗑️  DELETE cuarto:", params.id);
+  console.log("�️  DELETE cuarto:", params.id);
 
   try {
     const supabase = createClient({ request, cookies });
@@ -22,7 +22,9 @@ export async function DELETE({ params, request, cookies }) {
       );
     }
 
-    const cuartoId = params.id;
+    const cuartoId = parseInt(params.id);
+
+    console.log("🔍 Buscando cuarto ID:", cuartoId, "para usuario:", user.id);
 
     // Verificar que el cuarto pertenece al usuario
     const { data: cuarto, error: fetchError } = await supabase
@@ -33,13 +35,195 @@ export async function DELETE({ params, request, cookies }) {
       .single();
 
     if (fetchError || !cuarto) {
+      console.error("❌ Error o cuarto no encontrado:", fetchError);
       return new Response(
         JSON.stringify({
           error: "Cuarto no encontrado o no tienes permisos para eliminarlo",
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+            fetchError: fetchError,
+          },
           success: false,
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    console.log("✅ Cuarto encontrado:", cuarto.id, "- Título:", cuarto.titulo);
+
+    // Eliminar comentarios relacionados PRIMERO
+    console.log("🗑️ Eliminando comentarios relacionados...");
+    const { error: comentariosError } = await supabase
+      .from("comentarios")
+      .delete()
+      .eq("cuarto_id", cuartoId);
+
+    if (comentariosError) {
+      console.warn("⚠️ Error eliminando comentarios:", comentariosError);
+    }
+
+    // Marcar el cuarto como inactivo (eliminación lógica)
+    console.log("🔄 Marcando cuarto como inactivo (eliminación lógica)...");
+    console.log("📊 Datos de eliminación:", {
+      cuartoId: cuartoId,
+      userId: user.id,
+      cuartoTitulo: cuarto.titulo,
+    });
+
+    // Intentar con diferentes enfoques
+    let updateResult;
+    
+    // Método 1: Con user_id en el filtro
+    console.log("🔍 Método 1: UPDATE con user_id");
+    updateResult = await supabase
+      .from("cuartos")
+      .update({ activo: false })
+      .eq("id", cuartoId)
+      .eq("user_id", user.id)
+      .select();
+
+    console.log("📋 Resultado Método 1:", updateResult);
+
+    // Si el primer método no funcionó, intentar sin user_id
+    if (!updateResult.data || updateResult.data.length === 0) {
+      console.log("🔍 Método 2: UPDATE solo con ID");
+      updateResult = await supabase
+        .from("cuartos")
+        .update({ activo: false })
+        .eq("id", cuartoId)
+        .select();
+      
+      console.log("📋 Resultado Método 2:", updateResult);
+    }
+
+    // Si aún no funciona, mostrar el error específico de RLS
+    if (!updateResult.data || updateResult.data.length === 0) {
+      console.error("💥 Ambos métodos de actualización fallaron");
+      return new Response(
+        JSON.stringify({
+          error: "No se puede eliminar el cuarto debido a políticas de seguridad",
+          details: "Las políticas de Row Level Security (RLS) en Supabase están bloqueando la operación de UPDATE",
+          solution: {
+            step1: "Ve al Dashboard de Supabase",
+            step2: "Navega a Authentication → Policies",
+            step3: "Busca la tabla 'cuartos'",
+            step4: "Crea o verifica que existe una política de UPDATE",
+            step5: "La política debe ser: 'Users can update their own cuartos' con condición: auth.uid() = user_id"
+          },
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+            canRead: true, // Pudimos leer el cuarto
+            canUpdate: false, // No pudimos actualizarlo
+            rlsBlocking: true
+          },
+          success: false,
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const updatedData = updateResult.data;
+    const updateError = updateResult.error;
+
+    if (updateError) {
+      console.error("💥 Error marcando cuarto como inactivo:", updateError);
+      return new Response(
+        JSON.stringify({
+          error: "Error eliminando cuarto",
+          details: updateError.message,
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+          },
+          success: false,
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("✅ Cuarto eliminado exitosamente:", cuartoId);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        mensaje: "Cuarto eliminado exitosamente",
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error general eliminando cuarto:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Error interno del servidor",
+        details: error.message,
+        success: false,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+    // Verificar autenticación
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({
+          error: "Debes iniciar sesión para eliminar un cuarto",
+          success: false,
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const cuartoId = parseInt(params.id);
+
+    console.log("🔍 Buscando cuarto ID:", cuartoId, "para usuario:", user.id);
+
+    // Verificar que el cuarto pertenece al usuario
+    const { data: cuarto, error: fetchError } = await supabase
+      .from("cuartos")
+      .select("*")
+      .eq("id", cuartoId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !cuarto) {
+      console.error("❌ Error o cuarto no encontrado:", fetchError);
+      return new Response(
+        JSON.stringify({
+          error: "Cuarto no encontrado o no tienes permisos para eliminarlo",
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+            fetchError: fetchError,
+          },
+          success: false,
+        }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("✅ Cuarto encontrado:", cuarto.id, "- Título:", cuarto.titulo);
+
+    // Eliminar comentarios relacionados PRIMERO
+    console.log("🗑️ Eliminando comentarios relacionados...");
+    const { error: comentariosError } = await supabase
+      .from("comentarios")
+      .delete()
+      .eq("cuarto_id", cuartoId);
+
+    if (comentariosError) {
+      console.warn("⚠️ Error eliminando comentarios:", comentariosError);
+      // No fallar la operación, pero registrar el error
     }
 
     // Eliminar imágenes del storage (opcional)
@@ -62,19 +246,69 @@ export async function DELETE({ params, request, cookies }) {
       }
     }
 
-    // Eliminar el cuarto de la base de datos
-    const { error: deleteError } = await supabase
-      .from("cuartos")
-      .delete()
-      .eq("id", cuartoId)
-      .eq("user_id", user.id);
+    // Marcar el cuarto como inactivo (eliminación lógica)
+    console.log("� Marcando cuarto como inactivo (eliminación lógica)...");
+    console.log("📊 Datos de eliminación:", {
+      cuartoId: cuartoId,
+      userId: user.id,
+      cuartoTitulo: cuarto.titulo,
+    });
 
-    if (deleteError) {
-      console.error("Error eliminando cuarto:", deleteError);
+    const { data: updatedData, error: updateError } = await supabase
+      .from("cuartos")
+      .update({ activo: false })
+      .eq("id", cuartoId)
+      .select(); // Quitar el filtro de user_id para probar
+
+    console.log("🔍 Resultado de eliminación lógica:", {
+      updatedData: updatedData,
+      updateError: updateError,
+      updatedCount: updatedData?.length || 0,
+    });
+
+    if (updateError) {
+      console.error("💥 Error marcando cuarto como inactivo:", updateError);
       return new Response(
         JSON.stringify({
           error: "Error eliminando cuarto",
-          details: deleteError.message,
+          details: updateError.message,
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+          },
+          success: false,
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verificar si se actualizó algo
+    if (!updatedData || updatedData.length === 0) {
+      console.warn("⚠️ No se pudo marcar el cuarto como inactivo");
+      console.log("🔍 Última verificación - el cuarto aún existe?");
+
+      const { data: verificar, error: verificarError } = await supabase
+        .from("cuartos")
+        .select("*")
+        .eq("id", cuartoId);
+
+      console.log("📋 Estado actual del cuarto:", {
+        verificar: verificar,
+        verificarError: verificarError,
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "No se pudo eliminar el cuarto - posible problema con RLS",
+          debug: {
+            cuartoId: cuartoId,
+            userId: user.id,
+            updatedCount: 0,
+            cuartoStillExists: verificar?.length > 0,
+            rlsIssue: true,
+            suggestion:
+              "Las políticas de Row Level Security en Supabase están bloqueando la operación",
+          },
           success: false,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
