@@ -18,11 +18,12 @@ if (authError || !user) {
   return Astro.redirect("/registrar");
 }
 
-// Obtener cuartos del usuario
+// Obtener cuartos del usuario (solo los activos)
 const { data: cuartos, error } = await supabase
   .from("cuartos")
   .select("*")
   .eq("user_id", user.id)
+  .eq("activo", true) // Solo mostrar cuartos activos
   .order("created_at", { ascending: false });
 
 const cuartosProcesados =
@@ -233,7 +234,7 @@ console.log("========================");
                       <div class="flex-shrink-0">
                         <img
                           src={cuarto.imagen_1 || "/Images/default.jpeg"}
-                          alt={cuarto.name}
+                          alt={cuarto.titulo}
                           class="h-20 w-20 rounded-lg object-cover"
                           loading="lazy"
                           onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
@@ -241,7 +242,7 @@ console.log("========================");
                       </div>
                       <div class="ml-4 flex-1">
                         <h3 class="text-lg font-medium text-gray-900">
-                          {cuarto.name}
+                          {cuarto.titulo}
                         </h3>
                         <p class="text-sm text-gray-500 mt-1 line-clamp-2">
                           {cuarto.descripcion}
@@ -275,7 +276,7 @@ console.log("========================");
                         Editar
                       </a>
                       <button
-                        onclick={`eliminarCuarto('${cuarto.id}', '${cuarto.name}')`}
+                        onclick={`eliminarCuarto('${cuarto.id}', '${cuarto.titulo}')`}
                         class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-md text-sm font-medium transition-colors"
                       >
                         Eliminar
@@ -311,8 +312,12 @@ console.log("========================");
       }
 
       try {
-        const response = await fetch(`/api/cuartos/${cuartoId}`, {
+        const response = await fetch(`/api/cuarto-actions`, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: cuartoId }),
         });
 
         const result = await response.json();
