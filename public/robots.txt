@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://project-e08a17adv-yahirs-projects-9e5377e4.vercel.app/sitemap.xml
+
+# Disallow admin pages
+Disallow: /protected*
+Disallow: /editar-cuarto*
+Disallow: /mis-cuartos*
+Disallow: /api*
+
+# Allow important pages for SEO
+Allow: /
+Allow: /registrar
+Allow: /iniciar  
+Allow: /agregar-cuarto
+Allow: /cuarto/*
+
+# Crawl delay
+Crawl-delay: 1
