@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
+import InstallPWA from "../components/InstallPWA.astro";
 // import Nav2 from "../components/Nav.astro";
 ---
 
@@ -9,26 +10,44 @@ import Nav from "../components/Nav.astro";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Mobile optimizations -->
+    
+    <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-title" content="Cuartos App" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- App Description -->
+    <meta name="description" content="Encuentra y publica cuartos disponibles de manera fácil y segura" />
+    <meta name="keywords" content="cuartos, renta, alquiler, habitaciones, estudiantes" />
+    
+    <!-- Viewport optimizations -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="format-detection" content="telephone=no" />
+    
     <!-- Preconnect for better performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#3B82F6" />
+    
     <meta name="generator" content={Astro.generator} />
-    <title>R 4 N T U</title>
+    <title>Cuartos App - Encuentra tu cuarto ideal</title>
   </head>
   <body>
     <Nav />
     <!-- <Nav2 /> -->
     <slot />
+    
+    <!-- PWA Install Component -->
+    <InstallPWA />
   </body>
 </html>
 
