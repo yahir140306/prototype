@@ -37,6 +37,9 @@ const cuartosProcesados =
       <div class="relative mb-8">
         <button
           id="filtro-toggle"
+          aria-expanded="false"
+          aria-controls="filtro-panel"
+          aria-label="Abrir filtros de precio"
           class="w-full md:w-auto flex items-center justify-between bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-4 py-3 shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <div class="flex items-center space-x-2">
@@ -46,6 +49,7 @@ const cuartosProcesados =
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
@@ -66,6 +70,7 @@ const cuartosProcesados =
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               stroke-linecap="round"
@@ -78,6 +83,8 @@ const cuartosProcesados =
         <!-- Panel de Filtro Desplegable -->
         <div
           id="filtro-panel"
+          role="region"
+          aria-label="Filtros de búsqueda"
           class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 opacity-0 invisible transform scale-95 transition-all duration-200 ease-out"
         >
           <div class="p-6">
@@ -88,7 +95,7 @@ const cuartosProcesados =
             <div class="space-y-4">
               <!-- Campo Precio Mínimo -->
               <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700 block">
+                <label for="precio-min" class="text-sm font-medium text-gray-700 block">
                   Precio Mínimo
                 </label>
                 <div class="relative">
@@ -100,33 +107,44 @@ const cuartosProcesados =
                   <input
                     type="number"
                     id="precio-min"
+                    name="precio-min"
                     min="0"
                     step="1000"
                     placeholder="0"
+                    aria-describedby="precio-min-help"
                     class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   />
+                  <div id="precio-min-help" class="sr-only">
+                    Ingresa el precio mínimo en pesos mexicanos
+                  </div>
                 </div>
               </div>
 
               <!-- Campo Precio Máximo -->
               <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700 block">
+                <label for="precio-max" class="text-sm font-medium text-gray-700 block">
                   Precio Máximo
                 </label>
                 <div class="relative">
                   <span
                     class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"
+                    aria-hidden="true"
                   >
                     $
                   </span>
                   <input
                     type="number"
                     id="precio-max"
+                    name="precio-max"
                     min="0"
                     step="1000"
                     placeholder="Sin límite"
+                    aria-describedby="precio-max-help"
                     class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   />
+                  <div id="precio-max-help" class="sr-only">
+                    Ingresa el precio máximo en pesos mexicanos, o deja vacío para sin límite
+                  </div>
                 </div>
               </div>
 
@@ -136,7 +154,9 @@ const cuartosProcesados =
               >
                 <button
                   id="filtrar-btn"
-                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
+                  type="button"
+                  aria-label="Aplicar filtros de precio seleccionados"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   <div class="flex items-center justify-center space-x-2">
                     <svg
@@ -144,6 +164,7 @@ const cuartosProcesados =
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         stroke-linecap="round"
@@ -156,7 +177,9 @@ const cuartosProcesados =
                 </button>
                 <button
                   id="limpiar-btn"
-                  class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg transition-colors duration-200 font-medium border border-gray-200"
+                  type="button"
+                  aria-label="Limpiar todos los filtros aplicados"
+                  class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg transition-colors duration-200 font-medium border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 >
                   <div class="flex items-center justify-center space-x-2">
                     <svg
@@ -164,6 +187,7 @@ const cuartosProcesados =
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path
                         stroke-linecap="round"
@@ -248,7 +272,7 @@ const cuartosProcesados =
               <div class="relative group">
                 <img
                   src={cuarto.imagen_1 || "/Images/default.jpeg"}
-                  alt={cuarto.name}
+                  alt={`Imagen del cuarto: ${cuarto.titulo || 'Cuarto disponible'}`}
                   class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
@@ -261,7 +285,7 @@ const cuartosProcesados =
 
               <div class="p-5">
                 <h2 class="text-xl font-semibold mb-2 text-gray-800 line-clamp-1">
-                  {cuarto.name}
+                  {cuarto.titulo || cuarto.name || 'Cuarto disponible'}
                 </h2>
 
                 <p class="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">
@@ -278,7 +302,8 @@ const cuartosProcesados =
 
                   <a
                     href={`/cuarto/${cuarto.id}`}
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium transform hover:scale-105"
+                    aria-label={`Ver detalles del cuarto: ${cuarto.titulo || 'Cuarto disponible'} - $${cuarto.precio.toLocaleString()} pesos por mes`}
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     Ver más →
                   </a>

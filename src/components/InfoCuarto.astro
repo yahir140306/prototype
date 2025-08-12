@@ -36,13 +36,15 @@ import { CUARTO } from "../logic/cuarto";
 
       <button
         id="prev-btn"
-        class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+        class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="Ver imagen anterior del cuarto"
       >
         <svg
           class="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -54,13 +56,15 @@ import { CUARTO } from "../logic/cuarto";
 
       <button
         id="next-btn"
-        class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+        class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="Ver siguiente imagen del cuarto"
       >
         <svg
           class="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -70,16 +74,19 @@ import { CUARTO } from "../logic/cuarto";
         </svg>
       </button>
 
-      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2" role="group" aria-label="Indicadores de imagen">
         <button
-          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors active"
-          data-slide="0"></button>
+          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors active focus:outline-none focus:ring-2 focus:ring-blue-500"
+          data-slide="0"
+          aria-label="Ver primera imagen"></button>
         <button
-          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors"
-          data-slide="1"></button>
+          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          data-slide="1"
+          aria-label="Ver segunda imagen"></button>
         <button
-          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors"
-          data-slide="2"></button>
+          class="indicator w-3 h-3 rounded-full bg-white/60 hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          data-slide="2"
+          aria-label="Ver tercera imagen"></button>
       </div>
     </div>
 
@@ -101,13 +108,16 @@ import { CUARTO } from "../logic/cuarto";
 
       <div class="flex justify-center space-x-4">
         <button
-          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+          type="button"
+          aria-label="Contactar al propietario del cuarto"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Contactar
         </button>
         <a
           href="/"
-          class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors duration-200 inline-block"
+          aria-label="Regresar a la lista de cuartos disponibles"
+          class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors duration-200 inline-block focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
           Regresar
         </a>
