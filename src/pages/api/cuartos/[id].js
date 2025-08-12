@@ -205,23 +205,23 @@ export async function POST({ params, request, cookies }) {
 
     // ✅ PROCESAR IMÁGENES
     console.log("📸 Procesando imágenes...");
-    
+
     // Procesar imagen_1 (principal)
     const imagen1File = formData.get("imagen_1");
     if (imagen1File && imagen1File.size > 0) {
       console.log("🖼️ Nueva imagen_1 detectada:", imagen1File.name);
-      
+
       // Crear nombre único para evitar conflictos
       const timestamp = Date.now();
-      const extension = imagen1File.name.split('.').pop();
+      const extension = imagen1File.name.split(".").pop();
       const fileName = `cuarto_${cuartoId}_1_${timestamp}.${extension}`;
-      
+
       // Subir a Supabase Storage
       const { data: uploadData1, error: uploadError1 } = await supabase.storage
-        .from('cuartos-images')
+        .from("cuartos-images")
         .upload(fileName, imagen1File, {
           contentType: imagen1File.type,
-          upsert: true
+          upsert: true,
         });
 
       if (uploadError1) {
@@ -229,9 +229,9 @@ export async function POST({ params, request, cookies }) {
       } else {
         // Obtener URL pública
         const { data: publicUrl1 } = supabase.storage
-          .from('cuartos-images')
+          .from("cuartos-images")
           .getPublicUrl(fileName);
-        
+
         updateData.imagen_1 = publicUrl1.publicUrl;
         console.log("✅ Imagen_1 actualizada:", publicUrl1.publicUrl);
       }
@@ -241,25 +241,25 @@ export async function POST({ params, request, cookies }) {
     const imagen2File = formData.get("imagen_2");
     if (imagen2File && imagen2File.size > 0) {
       console.log("�️ Nueva imagen_2 detectada:", imagen2File.name);
-      
+
       const timestamp = Date.now();
-      const extension = imagen2File.name.split('.').pop();
+      const extension = imagen2File.name.split(".").pop();
       const fileName = `cuarto_${cuartoId}_2_${timestamp}.${extension}`;
-      
+
       const { data: uploadData2, error: uploadError2 } = await supabase.storage
-        .from('cuartos-images')
+        .from("cuartos-images")
         .upload(fileName, imagen2File, {
           contentType: imagen2File.type,
-          upsert: true
+          upsert: true,
         });
 
       if (uploadError2) {
         console.error("❌ Error subiendo imagen_2:", uploadError2);
       } else {
         const { data: publicUrl2 } = supabase.storage
-          .from('cuartos-images')
+          .from("cuartos-images")
           .getPublicUrl(fileName);
-        
+
         updateData.imagen_2 = publicUrl2.publicUrl;
         console.log("✅ Imagen_2 actualizada:", publicUrl2.publicUrl);
       }
@@ -269,25 +269,25 @@ export async function POST({ params, request, cookies }) {
     const imagen3File = formData.get("imagen_3");
     if (imagen3File && imagen3File.size > 0) {
       console.log("🖼️ Nueva imagen_3 detectada:", imagen3File.name);
-      
+
       const timestamp = Date.now();
-      const extension = imagen3File.name.split('.').pop();
+      const extension = imagen3File.name.split(".").pop();
       const fileName = `cuarto_${cuartoId}_3_${timestamp}.${extension}`;
-      
+
       const { data: uploadData3, error: uploadError3 } = await supabase.storage
-        .from('cuartos-images')
+        .from("cuartos-images")
         .upload(fileName, imagen3File, {
           contentType: imagen3File.type,
-          upsert: true
+          upsert: true,
         });
 
       if (uploadError3) {
         console.error("❌ Error subiendo imagen_3:", uploadError3);
       } else {
         const { data: publicUrl3 } = supabase.storage
-          .from('cuartos-images')
+          .from("cuartos-images")
           .getPublicUrl(fileName);
-        
+
         updateData.imagen_3 = publicUrl3.publicUrl;
         console.log("✅ Imagen_3 actualizada:", publicUrl3.publicUrl);
       }
