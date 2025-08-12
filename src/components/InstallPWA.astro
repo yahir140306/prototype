@@ -6,8 +6,18 @@
   <div class="bg-blue-600 text-white rounded-lg shadow-lg p-4 max-w-sm">
     <div class="flex items-start space-x-3">
       <div class="flex-shrink-0">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+          ></path>
         </svg>
       </div>
       <div class="flex-1 min-w-0">
@@ -34,8 +44,17 @@
         id="close-install"
         class="flex-shrink-0 text-blue-200 hover:text-white"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
     </div>
@@ -45,68 +64,69 @@
 <script is:inline>
   // PWA Install Logic
   let deferredPrompt;
-  let installPWA = document.getElementById('install-pwa');
-  let installButton = document.getElementById('install-button');
-  let dismissButton = document.getElementById('dismiss-install');
-  let closeButton = document.getElementById('close-install');
+  let installPWA = document.getElementById("install-pwa");
+  let installButton = document.getElementById("install-button");
+  let dismissButton = document.getElementById("dismiss-install");
+  let closeButton = document.getElementById("close-install");
 
   // Detectar cuando la PWA puede ser instalada
-  window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('PWA install prompt available');
+  window.addEventListener("beforeinstallprompt", (e) => {
+    console.log("PWA install prompt available");
     e.preventDefault();
     deferredPrompt = e;
-    
+
     // Mostrar el banner de instalación solo si no ha sido instalada
-    if (!window.matchMedia('(display-mode: standalone)').matches) {
-      installPWA.classList.remove('hidden');
+    if (!window.matchMedia("(display-mode: standalone)").matches) {
+      installPWA.classList.remove("hidden");
     }
   });
 
   // Instalar la PWA
-  installButton?.addEventListener('click', async () => {
+  installButton?.addEventListener("click", async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`PWA install outcome: ${outcome}`);
-      
-      if (outcome === 'accepted') {
-        installPWA.classList.add('hidden');
+
+      if (outcome === "accepted") {
+        installPWA.classList.add("hidden");
       }
-      
+
       deferredPrompt = null;
     }
   });
 
   // Ocultar banner
-  dismissButton?.addEventListener('click', () => {
-    installPWA.classList.add('hidden');
-    localStorage.setItem('pwa-dismissed', 'true');
+  dismissButton?.addEventListener("click", () => {
+    installPWA.classList.add("hidden");
+    localStorage.setItem("pwa-dismissed", "true");
   });
 
-  closeButton?.addEventListener('click', () => {
-    installPWA.classList.add('hidden');
+  closeButton?.addEventListener("click", () => {
+    installPWA.classList.add("hidden");
   });
 
   // No mostrar si fue previamente dismisseado
-  if (localStorage.getItem('pwa-dismissed') === 'true') {
-    installPWA.classList.add('hidden');
+  if (localStorage.getItem("pwa-dismissed") === "true") {
+    installPWA.classList.add("hidden");
   }
 
   // Ocultar si ya está instalada
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    console.log('PWA is already installed');
-    installPWA.classList.add('hidden');
+  if (window.matchMedia("(display-mode: standalone)").matches) {
+    console.log("PWA is already installed");
+    installPWA.classList.add("hidden");
   }
 
   // Service Worker registration status
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js")
         .then((registration) => {
-          console.log('SW registered: ', registration);
+          console.log("SW registered: ", registration);
         })
         .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
+          console.log("SW registration failed: ", registrationError);
         });
     });
   }
