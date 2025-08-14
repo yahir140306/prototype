@@ -95,7 +95,10 @@ const cuartosProcesados =
             <div class="space-y-4">
               <!-- Campo Precio Mínimo -->
               <div class="space-y-2">
-                <label for="precio-min" class="text-sm font-medium text-gray-700 block">
+                <label
+                  for="precio-min"
+                  class="text-sm font-medium text-gray-700 block"
+                >
                   Precio Mínimo
                 </label>
                 <div class="relative">
@@ -122,7 +125,10 @@ const cuartosProcesados =
 
               <!-- Campo Precio Máximo -->
               <div class="space-y-2">
-                <label for="precio-max" class="text-sm font-medium text-gray-700 block">
+                <label
+                  for="precio-max"
+                  class="text-sm font-medium text-gray-700 block"
+                >
                   Precio Máximo
                 </label>
                 <div class="relative">
@@ -143,7 +149,8 @@ const cuartosProcesados =
                     class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   />
                   <div id="precio-max-help" class="sr-only">
-                    Ingresa el precio máximo en pesos mexicanos, o deja vacío para sin límite
+                    Ingresa el precio máximo en pesos mexicanos, o deja vacío
+                    para sin límite
                   </div>
                 </div>
               </div>
@@ -272,7 +279,7 @@ const cuartosProcesados =
               <div class="relative group">
                 <img
                   src={cuarto.imagen_1 || "/Images/default.jpeg"}
-                  alt={`Imagen del cuarto: ${cuarto.titulo || 'Cuarto disponible'}`}
+                  alt={`Imagen del cuarto: ${cuarto.titulo || "Cuarto disponible"}`}
                   class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onerror="this.src='/Images/default.jpeg'; this.onerror=null;"
@@ -285,7 +292,7 @@ const cuartosProcesados =
 
               <div class="p-5">
                 <h2 class="text-xl font-semibold mb-2 text-gray-800 line-clamp-1">
-                  {cuarto.titulo || cuarto.name || 'Cuarto disponible'}
+                  {cuarto.titulo || cuarto.name || "Cuarto disponible"}
                 </h2>
 
                 <p class="text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed">
@@ -302,7 +309,7 @@ const cuartosProcesados =
 
                   <a
                     href={`/cuarto/${cuarto.id}`}
-                    aria-label={`Ver detalles del cuarto: ${cuarto.titulo || 'Cuarto disponible'} - $${cuarto.precio.toLocaleString()} pesos por mes`}
+                    aria-label={`Ver detalles del cuarto: ${cuarto.titulo || "Cuarto disponible"} - $${cuarto.precio.toLocaleString()} pesos por mes`}
                     class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     Ver más →

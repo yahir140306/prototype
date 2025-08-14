@@ -4,12 +4,8 @@
 
 <!-- Skip Links para navegación con teclado -->
 <div class="sr-only focus:not-sr-only">
-  <a href="#main-content" class="skip-link">
-    Saltar al contenido principal
-  </a>
-  <a href="#navigation" class="skip-link">
-    Ir a la navegación
-  </a>
+  <a href="#main-content" class="skip-link"> Saltar al contenido principal </a>
+  <a href="#navigation" class="skip-link"> Ir a la navegación </a>
 </div>
 
 <style>
@@ -17,7 +13,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    background: #3B82F6;
+    background: #3b82f6;
     color: white;
     padding: 8px 16px;
     text-decoration: none;
@@ -38,7 +34,7 @@
 
   /* Indicador de focus mejorado */
   .focus-visible {
-    outline: 3px solid #3B82F6 !important;
+    outline: 3px solid #3b82f6 !important;
     outline-offset: 2px !important;
     border-radius: 4px;
   }
@@ -60,8 +56,8 @@
 
   /* Mejores colores para daltonismo */
   .color-safe-error {
-    background-color: #DC2626;
-    border-left: 4px solid #B91C1C;
+    background-color: #dc2626;
+    border-left: 4px solid #b91c1c;
   }
 
   .color-safe-success {
@@ -70,8 +66,8 @@
   }
 
   .color-safe-warning {
-    background-color: #D97706;
-    border-left: 4px solid #B45309;
+    background-color: #d97706;
+    border-left: 4px solid #b45309;
   }
 
   /* Estados de carga accesibles */
@@ -88,67 +84,65 @@
   aria-live="polite"
   aria-atomic="true"
   class="sr-only"
-></div>
+>
+</div>
 
-<div
-  id="sr-alerts"
-  aria-live="assertive"
-  aria-atomic="true"
-  class="sr-only"
-></div>
+<div id="sr-alerts" aria-live="assertive" aria-atomic="true" class="sr-only">
+</div>
 
 <script is:inline>
   // Función para notificar a screen readers
   function notifyScreenReader(message, priority) {
-    priority = priority || 'polite';
-    const container = priority === 'assertive' ? 
-      document.getElementById('sr-alerts') : 
-      document.getElementById('sr-notifications');
-    
+    priority = priority || "polite";
+    const container =
+      priority === "assertive"
+        ? document.getElementById("sr-alerts")
+        : document.getElementById("sr-notifications");
+
     if (container) {
       container.textContent = message;
       // Limpiar después de 5 segundos
-      setTimeout(function() {
-        container.textContent = '';
+      setTimeout(function () {
+        container.textContent = "";
       }, 5000);
     }
   }
 
   // Mejorar focus de elementos interactivos
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", function () {
     const interactiveElements = document.querySelectorAll(
-      'button, a[href], input, textarea, select'
+      "button, a[href], input, textarea, select"
     );
 
-    interactiveElements.forEach(function(element) {
-      element.classList.add('interactive');
+    interactiveElements.forEach(function (element) {
+      element.classList.add("interactive");
     });
   });
 
   // Detectar si el usuario usa teclado para navegación
   let isUsingKeyboard = false;
 
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Tab") {
       isUsingKeyboard = true;
-      document.body.classList.add('keyboard-navigation');
+      document.body.classList.add("keyboard-navigation");
     }
   });
 
-  document.addEventListener('mousedown', function() {
+  document.addEventListener("mousedown", function () {
     isUsingKeyboard = false;
-    document.body.classList.remove('keyboard-navigation');
+    document.body.classList.remove("keyboard-navigation");
   });
 
   // Mejorar anuncios para filtros y acciones
-  document.addEventListener('click', function(e) {
+  document.addEventListener("click", function (e) {
     const target = e.target;
-    if (target && target.id === 'filtrar-btn') {
-      notifyScreenReader('Filtros aplicados. Resultados actualizados.');
+    if (target && target.id === "filtrar-btn") {
+      notifyScreenReader("Filtros aplicados. Resultados actualizados.");
     }
-    
-    if (target && target.id === 'limpiar-btn') {
-      notifyScreenReader('Filtros limpiados. Mostrando todos los cuartos.');
+
+    if (target && target.id === "limpiar-btn") {
+      notifyScreenReader("Filtros limpiados. Mostrando todos los cuartos.");
     }
   });
 </script>
